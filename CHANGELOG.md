@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0 - 2023/09/18
+## 1.5.0 - 2023/09/27
 
 - (AUTH) Clarify access token lifetime
 - (AUTH) Include in `Description` section rate limiting logic
