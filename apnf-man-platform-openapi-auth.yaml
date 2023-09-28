@@ -1,0 +1,402 @@
+openapi: 3.0.3
+info:
+  title: APNF MAN Platform - API Authentication Reference
+  version: 1.5.0
+  license:
+    name: CC-BY-SA-4.0
+    url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+  description: |
+    # Introduction
+
+    Welcome to the APNF MAN platform authentication API reference.
+    The API listed in this document shall be used by MAN platform API clients
+    to get access tokens required for authenticating against any MAN platform non-public APIs.
+    The API relies on OpenID Connect to generate the API access tokens, which will be valid for a
+    limited time period once they are generated.
+
+    ## API Authentication Process
+
+    Except for its BPCO module, the MAN platform requires clients to be authenticated for accessing its APIs.
+    The authentication process relies on OAuth 2.0 protocol, where an access token needs to be passed to the API request as a JSON Web TOKEN
+    using a Bearer `Authorization` header.
+
+    ```
+    Authorization: Bearer <JWT>
+    ```
+
+    An access token needs therefore first to be created using this API in order to be passed to any other MAN platform API call.
+    Once created, an access token is valid for 5 minutes.
+
+    ## Prerequisites
+
+    Before requesting any access token, clients first need to create an API credential using the MAN platform UI.
+    API credentials indeed provide the `client_id` and `client_request` properties which are needed when calling the access token generation API.
+
+    ## Rate Limiting
+
+    No rate limiting is applied to this API.
+
+
+    # References
+
+    Additional API references are also available, covering other MAN platform functionalities:
+    - **MAN Platform GCO API Reference**, listing the MAN platform GCO (Gestionnaires des Certificats Opérateurs) module APIs, to manage service provider data in the MAN platform, including STI certificates.
+    - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
+
+    # History
+
+    **1.5.0** - 2023/09/27
+    - Clarify access token lifetime
+    - Include in `Description` section rate limiting logic
+    - Add CC-BY-SA-4.0 license
+
+    **1.3.0** - 2023/06/16
+    - Add `servers` entries for VABF and Preproduction platforms
+    - Update `client_assertion` value in example request body
+    - Update `access_token` value in example response body
+    - Describe format of the `access_token` generated in the response
+
+    **1.2.0** - 2023/05/04
+    - Replace `token_type` response 'bearer' value to 'Bearer'
+    - Update response body required properties and add `refresh_expires_in` and `scope` properties
+    - Add 405 error case
+    - Update `error_description` example value for 400 error case
+
+    **1.1.0** - 2023/01/18
+    - Update API URL to prefix path with *auth/*
+    - Update `aud` property description to add *auth/* in its possible values and use a reference to the document `servers.url` property
+servers:
+  - url: https://sso.man-plateforme.fr/
+    description: Production platform
+  - url: https://sso.pprod.man-plateforme.fr/
+    description: Preproduction platform
+  - url: https://sso.vabf.man-plateforme.fr/
+    description: VABF platform
+tags:
+  - name: Access Tokens
+paths:
+  /auth/realms/{realm}/protocol/openid-connect/token:
+    post:
+      summary: Generate an access token from an API credential
+      description: |
+        The generated access token consists in a JSON Web Token (JWT) signed using a RS256 algorithm. Its format is the following:
+
+        **Header**
+
+        The header is composed of 3 claims:
+        - `alg`: Always defined as *RS256*.
+        - `typ`: Always defined as *JWT*.
+        - `kid`: The identifier of the key used to secure the JWS.
+
+        **Payload**
+
+        The payload is composed of 3 claims:
+        - `exp`: Integer representing the number of seconds since January 1, 1970 (midnight UTC/GMT), and defining the expiration time for this token.
+        - `iat`: Integer representing the number of seconds since January 1, 1970 (midnight UTC/GMT), corresponding to the time at which the token was issued.
+        - `jti`: Token unique identifier formatted as a UUID.
+        - `iss`: Token issuer, corresponding to the URL *https://<server.url>/auth/realms/MAN*, where `<server.url>` shall be replaced by the `servers.url` property defined in this document corresponding to the platform the method is called.
+        - `sub`: Token subject, formatted as a UUID corresponding to the identifier of the API credential associated to the `client_id` property used to create the `client_assertion` property passed in the request.
+        - `typ`: Always defined as *Bearer*.
+        - `azp`: Corresponds to the `client_id` property used to create the `client_assertion` property passed in the request.
+        - `realm_access`: Roles granted to the token. Always defined as `{ "roles": [ "MANAGER" ] }`.
+        - `scope`: Always empty.
+        - `groups_uuid`: Contains the identifier of the service provider for which the token has been created, using the format `{ "/providers/<SPC CODE>": "<SPC UUID>" }`, where `<SPC CODE>` is the provider APNF code and `<SPC UUID>` the ID of the provider formatteted as a UUID.
+        - `clientHost`: Hostname or IP address of the client that submitted the request.
+        - `clientId`: Corresponds to the `client_id` property used to create the `client_assertion` property passed in the request.
+        - `provider_status`: Always defined as *ENABLED*.
+        - `clientAddress`: IP address of the client that submitted the request.
+      tags:
+        - Access Tokens
+      parameters:
+        - name: realm
+          in: path
+          description: Realm to manage users, credentials, identity providers & access to protected MAN resources
+          required: true
+          schema:
+            type: string
+            enum:
+              - MAN
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                  enum:
+                    - client_credentials
+                  description: The type of authorization flow. Shall be set to `client_credentials`
+                client_assertion_type:
+                  type: string
+                  enum:
+                    - urn:ietf:params:oauth:client-assertion-type:jwt-bearer
+                  description: The format of the assertion. Its value must be `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
+                client_assertion:
+                  type: string
+                  description: |
+                    The assertion being used to authenticate the client :
+
+                    A JSON Web Signature Compact Serialization, represented as the following concatenation:
+                    ```
+                    BASE64URL(UTF8(JWS Protected Header)) || '.' ||
+                    BASE64URL(JWS Payload) || '.' ||
+                    BASE64URL(JWS Signature)
+                    ```
+                    resulting in
+                    ```
+                    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                    .eyJzdWIi[...omitted for brevity...]
+                    .fpLTE3dS[...omitted for brevity...]
+                    ```
+                    ###### JWS Protected Header
+                    ```
+                    {
+                      "typ":"JWT",
+                      "alg":"HS256"
+                    }
+                    ```
+                    **JWS Payload**
+                    ```
+                    {
+                      "sub":(Subject),
+                      "iss":(Issuer),
+                      "aud":(Audience),
+                      "jti":(JWT ID),
+                      "exp":(Expiration Time)
+                    }
+                    ```
+                    where
+                    * __Subject__ and __Issuer__ MUST match the `client_id` property of an API credential created from the MAN platform.
+                    * __Audience__ MUST match a value among :
+                      * the __issuer url__: <AUTH_API_URL>/auth/realms/{realm}
+                      * the __token endpoint url__: <AUTH_API_URL>/auth/realms/{realm}/protocol/openid-connect/token
+
+                      where <AUTH_API_URL> must be replaced by the `servers.url` property defined in this document corresponding to the platform you call the method.
+                    * __JWT ID__ MUST be unique (not reusable before expiration)
+                    * __Expiration Time__ MUST be a numeric value representing the number of seconds since January 1, 1970 (midnight UTC/GMT), and defining the expiration time on or after which the token MUST NOT be accepted for processing.
+
+                    **JWS Signature**
+                    ```
+                    HMACSHA256(
+                      BASE64URL(UTF8(JWS Protected Header)) || '.' ||
+                      BASE64URL(JWS Payload) ,
+                      (Symmetric Key)
+                    )
+                    ```
+                    where
+                    * __Symmetric Key__ MUST match the `client_secret` property of the API credential associated with the `client_id` property used for the `Subject` and `Issuer` parameters.
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL3Nzby52YWJmLm1hbi1wbGF0ZWZvcm1lLmZyL2F1dGgvcmVhbG1zL01BTiIsImV4cCI6MTY4MzcwODMzMSwiaXNzIjoic3BjMDAtY3JlZC0xIiwianRpIjoiYjJiZjNhYWItYzA5NS00ZWIwLWEwYjItYjNhZGNjM2MzYTBlIiwic3ViIjoic3BjMDAtY3JlZC0xIn0.EKJArLh/CjiysHHeHSIO9JOP7/fziRs1eqWkUvSH2bg
+              required:
+                - grant_type
+                - client_assertion_type
+                - client_assertion
+      responses:
+        '200':
+          description: Successful token response with access token
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: JSON Web Token that must be passed as is to MAN platform GCO API requests to authenticate them.
+                  expires_in:
+                    type: integer
+                    description: The lifetime in seconds of the access token.
+                  not-before-policy:
+                    type: integer
+                    description: All tokens issued before this timestamp become invalid. The default value is 0. Only a platform malfunction may generate the change of this value.
+                  refresh_expires_in:
+                    type: integer
+                    description: Refresh token lifetime. Always set to 0.
+                  scope:
+                    type: string
+                    description: Token scope. Always empty.
+                  token_type:
+                    type: string
+                    enum:
+                      - Bearer
+                    description: The token type. Shall be set to `Bearer`.
+                required:
+                  - access_token
+                  - expires_in
+                  - not-before-policy
+                  - refresh_expires_in
+                  - scope
+                  - token_type
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImwybXEtLUtPQ0h3dlZtczhIQVRnRnY5ZFM2MFpqb3ZtR3p6T3NFOVo2UFUifQ.eyJleHAiOjE2ODM3MDgxMDEsImlhdCI6MTY4MzcwNzgwMSwianRpIjoiNDU3ZWZhMjktMGIyMC00Njc4LWI0OTgtMDc0ZjJmZDhhM2JjIiwiaXNzIjoiaHR0cHM6Ly92YWJmLm1hbi1wbGF0ZWZvcm1lLmZyL2F1dGgvcmVhbG1zL01BTiIsInN1YiI6Ijk0MzY2NzU4LWUyOWQtNDgxNy05MTVjLThlYTgyNTAzZjI0ZSIsInR5cCI6IkJlYXJlciIsImF6cCI6InNwYzAwLWNyZWQtMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJNQU5BR0VSIl19LCJzY29wZSI6IiIsImdyb3Vwc191dWlkIjp7Ii9wcm92aWRlcnMvU1BDMDAiOiI1YTMwOWZmYy1lZjBlLTExZWQtYTA1Yi0wMjQyYWMxMjAwMDMifSwiY2xpZW50SG9zdCI6IjI1NS4yNTUuMjU1LjI1NSIsImNsaWVudElkIjoic3BjMDAtY3JlZC0xIiwicHJvdmlkZXJfc3RhdHVzIjoiRU5BQkxFRCIsImNsaWVudEFkZHJlc3MiOiIyNTUuMjU1LjI1NS4yNTUifQ.Ov0VrQsuZruSPVbMBSmMIGnjw9cajfxjSH8Y3EZ7FjM
+                expires_in: 60
+                not-before-policy: 0
+                refresh_expires_in: 0
+                token_type: Bearer
+                scope: ''
+        '400':
+          description: Token error response
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      error:
+                        enum:
+                          - invalid_client
+                          - invalid_request
+                          - unauthorized_client
+                          - unsupported_grant_type
+              example:
+                error: invalid_client
+                error_description: Invalid client credentials
+        '401':
+          description: Unauthorized access (e.g. client misconfigured for client credentials flow)
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      error:
+                        enum:
+                          - invalid_request
+                          - unauthorized_client
+              example:
+                error: invalid_request
+                error_description: Client not enabled to retrieve service account
+        '403':
+          description: Forbidden access (e.g. realm disabled)
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      error:
+                        enum:
+                          - access_denied
+                          - invalid_request
+              example:
+                error: access_denied
+                error_description: Realm not enabled
+        '404':
+          description: Resource not found (e.g. realm not found)
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Realm does not exist
+        '405':
+          description: Returned when the API method is not allowed for the given object.
+          headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'RESTEASY003650: No resource method found for DELETE, return 405 with Allow header'
+            text/plain:
+              example: ''
+        '500':
+          description: Unexpected error occured
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: unknown_error
+            text/plain:
+              example: ''
+        '503':
+          description: Service unavailable or under maintenance
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            Pragma:
+              $ref: '#/components/headers/Pragma'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: service_unavailable
+components:
+  headers:
+    Cache-Control:
+      description: Control caching in browsers and shared caches
+      schema:
+        type: string
+        enum:
+          - no-store
+    Content-Length:
+      description: Size of the message body, in bytes
+      schema:
+        type: integer
+    Pragma:
+      description: Cache-Control backwards compatibility with HTTP/1.0 cache
+      schema:
+        type: string
+        enum:
+          - no-cache
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        error_description:
+          type: string
+      required:
+        - error
