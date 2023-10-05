@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - BPCO API Reference
-  version: 1.5.0
+  version: 1.5.1
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -69,6 +69,10 @@ info:
     - **MAN Platform Authentication API Reference**, providing the APIs to create access tokens require to authenticate against the APIs listed in this document.
 
     # History
+
+    **1.5.0** - 2023/10/05
+    - (GET /ca) Update `version` format from integer to float
+    - (GET /ca/certs) Update `version` format from integer to float
 
     **1.5.0** - 2023/09/27
     - Include in `Description` section rate limiting logic
@@ -299,7 +303,7 @@ paths:
             * `payload` property contains the JWS payload encoded as Base64:
               ```
               base64UrlEncode({
-                "version": 1,
+                "version": 1.0,
                 "sequence": 1,
                 "exp": 1300819380,
                 "trustList": [
@@ -308,7 +312,7 @@ paths:
               })
               ```
               In this payload:
-                * `version` is an integer starting with `1` and incremented when the payload format is updated,
+                * `version` is a float starting with `1.0` and incremented by 1 each time the payload format is updated,
                 * `sequence` is an integer incremented each time the certificate list is updated,
                 * `exp` contains the timestamp corresponding to the token expiration date. Expiration for this token is set to one week.
                 * `trustList` contains the list of the CA root certificates in PEM format.
@@ -414,7 +418,7 @@ paths:
             * `payload` property contains the JWS payload encoded as Base64:
               ```
               base64UrlEncode({
-                "version": 1,
+                "version": 1.0,
                 "sequence": 1,
                 "exp": 1300819380,
                 "certList": [
@@ -424,7 +428,7 @@ paths:
               })
               ```
               In this payload:
-                * `version` is an integer starting with `1` and incremented when the payload format is updated,
+                * `version` is a float starting with `1.0` and incremented by 1 each time the payload format is updated,
                 * `sequence` is an integer incremented each time the certificate list is updated,
                 * `exp` contains the timestamp corresponding to the token expiration date. Expiration for this token is set to one week.
                 * `certList` contains the list of the CA intermediates certificates in PEM format.
