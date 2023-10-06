@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1 - 2023/10/05
+
+- (BPCO) (GET /ca) Update `version` format from integer to float
+- (BPCO) (GET /ca/certs) Update `version` format from integer to float
+
 ## 1.5.0 - 2023/09/27
 
 - (AUTH) Clarify access token lifetime
