@@ -1,11 +1,23 @@
 openapi: 3.0.3
 info:
-  title: APNF MAN Platform - API Authentication Reference
-  version: 1.5.1
+  title: API for the MAN authentication endpoint
+  version: 1.0.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+  contact:
+    email: api-support@metaswitch.com
+    url: https://www.metaswitch.com/
   description: |
+    # API for the MAN authentication endpoint
+
+    This is the OpenAPI specification for the authentication endpoint, as provided by APNF under the CC-BY-SA-4.0 license,
+    and edited by Metaswitch (a Microsoft company) under the same license. These edits remove some response parameters and
+    response codes from the APNF version for Metaswitch's client-side use-case, and make minor adjustments
+    to the arrangement of fields (commented in-line) and descriptions for compatibility with the Swagger OpenAPI tool.
+
+    There follows information retained from the original API definition.
+
     # Introduction
 
     Welcome to the APNF MAN platform authentication API reference.
@@ -65,46 +77,12 @@ info:
     **1.1.0** - 2023/01/18
     - Update API URL to prefix path with *auth/*
     - Update `aud` property description to add *auth/* in its possible values and use a reference to the document `servers.url` property
-servers:
-  - url: https://sso.man-plateforme.fr/
-    description: Production platform
-  - url: https://sso.pprod.man-plateforme.fr/
-    description: Preproduction platform
-  - url: https://sso.vabf.man-plateforme.fr/
-    description: VABF platform
 tags:
   - name: Access Tokens
 paths:
   /auth/realms/{realm}/protocol/openid-connect/token:
     post:
       summary: Generate an access token from an API credential
-      description: |
-        The generated access token consists in a JSON Web Token (JWT) signed using a RS256 algorithm. Its format is the following:
-
-        **Header**
-
-        The header is composed of 3 claims:
-        - `alg`: Always defined as *RS256*.
-        - `typ`: Always defined as *JWT*.
-        - `kid`: The identifier of the key used to secure the JWS.
-
-        **Payload**
-
-        The payload is composed of 3 claims:
-        - `exp`: Integer representing the number of seconds since January 1, 1970 (midnight UTC/GMT), and defining the expiration time for this token.
-        - `iat`: Integer representing the number of seconds since January 1, 1970 (midnight UTC/GMT), corresponding to the time at which the token was issued.
-        - `jti`: Token unique identifier formatted as a UUID.
-        - `iss`: Token issuer, corresponding to the URL *https://<server.url>/auth/realms/MAN*, where `<server.url>` shall be replaced by the `servers.url` property defined in this document corresponding to the platform the method is called.
-        - `sub`: Token subject, formatted as a UUID corresponding to the identifier of the API credential associated to the `client_id` property used to create the `client_assertion` property passed in the request.
-        - `typ`: Always defined as *Bearer*.
-        - `azp`: Corresponds to the `client_id` property used to create the `client_assertion` property passed in the request.
-        - `realm_access`: Roles granted to the token. Always defined as `{ "roles": [ "MANAGER" ] }`.
-        - `scope`: Always empty.
-        - `groups_uuid`: Contains the identifier of the service provider for which the token has been created, using the format `{ "/providers/<SPC CODE>": "<SPC UUID>" }`, where `<SPC CODE>` is the provider APNF code and `<SPC UUID>` the ID of the provider formatteted as a UUID.
-        - `clientHost`: Hostname or IP address of the client that submitted the request.
-        - `clientId`: Corresponds to the `client_id` property used to create the `client_assertion` property passed in the request.
-        - `provider_status`: Always defined as *ENABLED*.
-        - `clientAddress`: IP address of the client that submitted the request.
       tags:
         - Access Tokens
       parameters:
@@ -253,16 +231,9 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ErrorResponse'
-                  - type: object
-                    properties:
-                      error:
-                        enum:
-                          - invalid_client
-                          - invalid_request
-                          - unauthorized_client
-                          - unsupported_grant_type
+                # Differs from the original APNF API document (but not in function).
+                # See comment in components -> schemas container. 
+                $ref: '#/components/schemas/ErrorBadRequest'
               example:
                 error: invalid_client
                 error_description: Invalid client credentials
@@ -278,14 +249,9 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ErrorResponse'
-                  - type: object
-                    properties:
-                      error:
-                        enum:
-                          - invalid_request
-                          - unauthorized_client
+                # Differs from the original APNF API document (but not in function).
+                # See comment in components -> schemas container. 
+                $ref: '#/components/schemas/ErrorUnauthorized'
               example:
                 error: invalid_request
                 error_description: Client not enabled to retrieve service account
@@ -301,14 +267,9 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ErrorResponse'
-                  - type: object
-                    properties:
-                      error:
-                        enum:
-                          - access_denied
-                          - invalid_request
+                # Differs from the original APNF API document (but not in function).
+                # See comment in components -> schemas container. 
+                $ref: '#/components/schemas/ErrorForbidden'
               example:
                 error: access_denied
                 error_description: Realm not enabled
@@ -327,19 +288,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Realm does not exist
-        '405':
-          description: Returned when the API method is not allowed for the given object.
-          headers:
-            Content-Length:
-              $ref: '#/components/headers/Content-Length'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: 'RESTEASY003650: No resource method found for DELETE, return 405 with Allow header'
-            text/plain:
-              example: ''
         '500':
           description: Unexpected error occured
           headers:
@@ -355,8 +303,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: unknown_error
-            text/plain:
-              example: ''
         '503':
           description: Service unavailable or under maintenance
           headers:
@@ -400,3 +346,36 @@ components:
           type: string
       required:
         - error
+    # The following three error formats have been refactored into their own schema
+    # definitions as the Swagger openapi-generator could not generate the Rust
+    # bindings in the original format. This API document should be functionally
+    # equivalent to the original.
+    ErrorBadRequest:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum:
+                - invalid_client
+                - invalid_request
+                - unauthorized_client
+                - unsupported_grant_type
+    ErrorUnauthorized:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum:
+                - invalid_request
+                - unauthorized_client
+    ErrorForbidden:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              enum:
+                - access_denied
+                - invalid_request
