@@ -1,3 +1,12 @@
+# Metaswitch changelog
+
+The below Changelog is from the APNF branch, from which this is forked. The changes made by Metaswitch (a Microsoft company) to the individual APIs are documented within those files. The versioning in those files is also the Metaswitch versioning and does not match the versions below in this Changelog.
+
+## Version correlation (APNF -> Metaswitch)
+- (AUTH): 1.5.1 -> 1.0.0
+- (BPCO): 1.5.1 -> 1.0.0
+- (GCO): 1.5.1 -> 1.0.0
+
 # Changelog
 
 ## 1.5.1 - 2023/10/05

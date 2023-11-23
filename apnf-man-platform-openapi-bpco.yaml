@@ -1,11 +1,32 @@
 openapi: 3.0.3
 info:
-  title: APNF MAN Platform - BPCO API Reference
-  version: 1.5.1
+  title: API for the MAN BPCO endpoints
+  version: 1.0.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+  contact:
+    email: api-support@metaswitch.com
+    url: https://www.metaswitch.com/
   description: |
+    # API for the MAN BCO endpoints
+
+    This is the OpenAPI specification for the BPCO endpoints, as provided by APNF under the CC-BY-SA-4.0 license,
+    and edited by Metaswitch (a Microsoft company) under the same license. These edits remove some request and response
+    parameters and response codes from the APNF version for Metaswitch's client-side use-case, and make minor adjustments
+    to the description fields for nicer output with the Swagger OpenAPI tool.
+
+    ## Metaswitch Modifications
+
+    - Removed:
+      - servers section: these were the APNF servers.
+      - X-Request-ID parameter from requests, X-Correlation-Id and X-Response-Id from response headers: Metaswitch does not use these on this API.
+      - Some error codes: added in later versions of the APNF file, not needed for the Metaswitch use case.
+    - Changes:
+     - Some description field updates: changes made to comment fields for nicer output with the swagger tool.
+
+    There follows information retained from the original API definition.
+
     # Introduction
 
     Welcome to the APNF MAN platform BPCO (*Base Publique des Certificats Opérateurs*) API reference.
@@ -69,6 +90,7 @@ info:
     - **MAN Platform Authentication API Reference**, providing the APIs to create access tokens require to authenticate against the APIs listed in this document.
 
     # History
+    ## Metaswitch Note - the following are the APNF version history, so version numbers do not match this file and edits may not be reflected.
 
     **1.5.0** - 2023/10/05
     - (GET /ca) Update `version` format from integer to float
@@ -106,13 +128,6 @@ info:
 
     - Update base URL from *https://man-bpco.fr/* to *https://api.man-bpco.fr/*
     - Update `CertificateSerialNumber` component schema pattern
-servers:
-  - url: https://api.man-bpco.fr/
-    description: Production platform
-  - url: https://api.pprod.man-bpco.fr/
-    description: Preproduction platform
-  - url: https://api.vabf.man-bpco.fr/
-    description: VABF platform
 tags:
   - name: BPCO
     description: |
@@ -135,7 +150,6 @@ paths:
             pattern: ^([0-9A-Z]{6})$
             example: OPC000
         - $ref: '#/components/parameters/CertificateSerialNumber'
-        - $ref: '#/components/parameters/X-Request-Id'
       responses:
         '200':
           description: The STI certificate in PEM format.
@@ -168,18 +182,10 @@ paths:
               schema:
                 type: integer
                 example: 1094
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
         '400':
           $ref: '#/components/responses/ErrorValidation'
         '404':
           $ref: '#/components/responses/ErrorNotFound'
-        '405':
-          $ref: '#/components/responses/ErrorNotAllowed'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -204,7 +210,6 @@ paths:
         - BPCO
       parameters:
         - $ref: '#/components/parameters/If-Modified-Since'
-        - $ref: '#/components/parameters/X-Request-Id'
       responses:
         '200':
           description: The Certificate Revocation List in DER format.
@@ -244,12 +249,11 @@ paths:
               schema:
                 type: integer
                 example: 292
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
         '304':
-          description: No change since the date provided in the `If-Modified-Since` request header.
+          description: |
+            No change since requested date.
+
+            No change since the date provided in the `If-Modified-Since` request header.
           headers:
             Last-Modified:
               description: Last update date of the CRL file. Uses HTTP-Date format (RFC 7231).
@@ -257,14 +261,6 @@ paths:
                 $ref: '#/components/schemas/RFC7231.HTTP-date'
             Content-Type:
               $ref: '#/components/headers/Content-Type-Pkix-Crl'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '405':
-          $ref: '#/components/responses/ErrorNotAllowed'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -285,10 +281,11 @@ paths:
         - BPCO
       parameters:
         - $ref: '#/components/parameters/If-Modified-Since'
-        - $ref: '#/components/parameters/X-Request-Id'
       responses:
         '200':
           description: |
+            JWT containing root CA certs.
+
             A JSON Web Token containing the Certificate Authority root certificates in its payload and signed by the
             Certificate Authority PA certificate following
             [RFC 7515 (JSON Serialisation)](https://datatracker.ietf.org/doc/html/rfc7515#section-3.2).
@@ -359,12 +356,11 @@ paths:
                 $ref: '#/components/schemas/RFC7231.HTTP-date'
             Content-Length:
               $ref: '#/components/headers/Content-Length'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
         '304':
-          description: No change since the date provided in the `If-Modified-Since` request header
+          description: |
+            No change since requested date.
+
+            No change since the date provided in the `If-Modified-Since` request header
           headers:
             Last-Modified:
               description: Last update date of the Certificate Authority root certificates list. Uses HTTP-Date format (RFC 7231).
@@ -372,14 +368,6 @@ paths:
                 $ref: '#/components/schemas/RFC7231.HTTP-date'
             Content-Type:
               $ref: '#/components/headers/Content-Type-Jose-Json'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '405':
-          $ref: '#/components/responses/ErrorNotAllowed'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -400,10 +388,11 @@ paths:
         - BPCO
       parameters:
         - $ref: '#/components/parameters/If-Modified-Since'
-        - $ref: '#/components/parameters/X-Request-Id'
       responses:
         '200':
           description: |
+            JWT containing intermediate CA certs.
+
             A JSON Web Token containing the Certificate Authority intermediate certificates in its payload and signed
             by the Certificate Authority PA certificate following
             [RFC 7515 (JSON Serialisation)](https://datatracker.ietf.org/doc/html/rfc7515#section-3.2).
@@ -496,12 +485,11 @@ paths:
                 $ref: '#/components/schemas/RFC7231.HTTP-date'
             Content-Length:
               $ref: '#/components/headers/Content-Length'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
         '304':
-          description: No change since the date provided in the `If-Modified-Since` request header
+          description: |
+            No change since requested date.
+
+            No change since the date provided in the `If-Modified-Since` request header
           headers:
             Last-Modified:
               description: |
@@ -510,14 +498,6 @@ paths:
                 $ref: '#/components/schemas/RFC7231.HTTP-date'
             Content-Type:
               $ref: '#/components/headers/Content-Type-Jose-Json'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '405':
-          $ref: '#/components/responses/ErrorNotAllowed'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -533,7 +513,6 @@ paths:
         - BPCO
       parameters:
         - $ref: '#/components/parameters/CertificateSerialNumber'
-        - $ref: '#/components/parameters/X-Request-Id'
       responses:
         '200':
           description: The Certificate Authority certificate in PEM format.
@@ -567,18 +546,10 @@ paths:
               schema:
                 type: integer
                 example: 1147
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
         '400':
           $ref: '#/components/responses/ErrorValidation'
         '404':
           $ref: '#/components/responses/ErrorNotFound'
-        '405':
-          $ref: '#/components/responses/ErrorNotAllowed'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -604,7 +575,6 @@ paths:
         - BPCO
       parameters:
         - $ref: '#/components/parameters/If-Modified-Since'
-        - $ref: '#/components/parameters/X-Request-Id'
       responses:
         '200':
           description: The Certificate Revocation List in DER format.
@@ -645,12 +615,11 @@ paths:
               schema:
                 type: integer
                 example: 311
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
         '304':
-          description: No change since the date provided in the `If-Modified-Since` request header
+          description: |
+            No change since requested date.
+
+            No change since the date provided in the `If-Modified-Since` request header
           headers:
             Last-Modified:
               description: Last update date of the CRL file. Uses HTTP-Date format (RFC 7231).
@@ -658,14 +627,6 @@ paths:
                 $ref: '#/components/schemas/RFC7231.HTTP-date'
             Content-Type:
               $ref: '#/components/headers/Content-Type-Pkix-Crl'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '405':
-          $ref: '#/components/responses/ErrorNotAllowed'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -683,21 +644,16 @@ components:
       headers:
         Content-Length:
           $ref: '#/components/headers/Content-Length'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
     ErrorNotFound:
-      description: Returned when the object referenced by the API request does not exist.
+      description: |
+        Requested object not found.
+
+        Returned when the object referenced by the API request does not exist.
       headers:
         Content-Length:
           $ref: '#/components/headers/Content-Length-0'
         Content-Type:
           $ref: '#/components/headers/Content-Type-TextPlain'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
     ErrorNotAllowed:
       description: Returned when the API method is not allowed for the given object.
       headers:
@@ -705,54 +661,36 @@ components:
           $ref: '#/components/headers/Content-Length-0'
         Content-Type:
           $ref: '#/components/headers/Content-Type-TextPlain'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
-    ErrorInvalidAcceptHeader:
-      description: Returned when the client specifies a type in `Accept` HTTP header not supported.
-      headers:
-        Content-Length:
-          $ref: '#/components/headers/Content-Length-0'
-        Content-Type:
-          $ref: '#/components/headers/Content-Type-TextPlain'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
     ErrorRateLimiting:
-      description: Returned when too many requests have been sent by the client in a certain amount of time.
+      description: |
+        Client rate limited.
+
+        Returned when too many requests have been sent by the client in a certain amount of time.
       headers:
         Content-Length:
           $ref: '#/components/headers/Content-Length-0'
         Content-Type:
           $ref: '#/components/headers/Content-Type-TextPlain'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
     ErrorInternal:
-      description: Returned when an unexpected error occurred while processing the request.
+      description: |
+        Unexpected internal error.
+
+        Returned when an unexpected error occurred while processing the request.
       headers:
         Content-Length:
           $ref: '#/components/headers/Content-Length-0'
         Content-Type:
           $ref: '#/components/headers/Content-Type-TextPlain'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
     ServiceUnavailable:
-      description: Returned when the service is unavailable (e.g. maintenance mode) and cannot process the request.
+      description: |
+        Service is unavailable.
+
+        Returned when the service is unavailable (e.g. maintenance mode) and cannot process the request.
       headers:
         Content-Length:
           $ref: '#/components/headers/Content-Length-0'
         Content-Type:
           $ref: '#/components/headers/Content-Type-TextPlain'
-        X-Correlation-Id:
-          $ref: '#/components/headers/X-Correlation-Id'
-        X-Response-Id:
-          $ref: '#/components/headers/X-Response-Id'
   schemas:
     ErrorResponse:
       type: object
@@ -763,11 +701,6 @@ components:
         - error
       example:
         error: The request failed.
-    UUID:
-      type: string
-      format: uuid
-      pattern: ^([0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12})$
-      example: cc4519cb-b2b6-45ad-904c-7698fdf72ba2
     RFC7231.HTTP-date:
       type: string
       description: Date format as defined in RFC7231, section 7.1.1.1.
@@ -790,14 +723,6 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/RFC7231.HTTP-date'
-    X-Request-Id:
-      name: X-Request-Id
-      in: header
-      description: Request ID that will be returned into the `X-Response-Id` response header.
-      required: false
-      schema:
-        $ref: '#/components/schemas/UUID'
-        example: 68831c50-2953-4047-9935-81a98ac1e1e1
   headers:
     Content-Type-Jose-Json:
       description: Content-Type header set as "application/jose+json".
@@ -827,13 +752,3 @@ components:
         maximum: 0
         default: 0
         example: 0
-    X-Correlation-Id:
-      description: ID generated by the API gateway.
-      schema:
-        $ref: '#/components/schemas/UUID'
-        example: f13371a6-40d7-48cf-a221-794b63fddbd9
-    X-Response-Id:
-      description: Response ID that corresponds to the `X-Request-Id` request header, if provided.
-      schema:
-        $ref: '#/components/schemas/UUID'
-        example: 68831c50-2953-4047-9935-81a98ac1e1e1
