@@ -2,7 +2,9 @@
 
 [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
 
-Welcome to the APNF MAN platform API reference.
+Welcome to the Metaswitch (a Microsoft company) fork of the APNF MAN platform API reference.
+
+This version is forked from the APNF branch for Metaswitch use and shared under the CC-BY-SA-4.0 license. The changes made by Metaswitch are documented in the individual API files.
 
 The OpenAPI files present in this repository provide to API clients the necessary information to access the APIs made available by the MAN platform, the STIR/Shaken french solution for service providers, and operated by the APNF (ASSOCIATION DES PLATEFORMES DE NORMALISATION DES FLUX INTER-OPERATEURS).
 
