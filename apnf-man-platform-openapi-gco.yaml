@@ -87,7 +87,7 @@ info:
 
     # History
 
-    **1.6.0** - 2023/12/06
+    **1.6.0** - 2023/11/28
     - (Certificates) PATCH /certificates/{certificate_id} - Add constraints for expired certificates
     - (Certificates) POST /certificates/{certificate_id} - Add 409 HTTP status case
     - (Certificates) GET /certificates/export - New endpoint to export certificates as CSV
