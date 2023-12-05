@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - GCO API Reference
-  version: 1.5.1
+  version: 1.6.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -65,7 +65,7 @@ info:
     | **406**    | The format in the `Accept` header is not supported.                     |
     | **409**    | There is a conflict between the object status and the action requested  |
     | **415**    | The format in the `Content-Type` header is not supported.               |
-    | **429**    | Too many requests have been sent by the client (see Rate Limting).      |
+    | **429**    | Too many requests have been sent by the client (see Rate Limiting).      |
     | **500**    | An unexpected error occurred while processing the request.              |
     | **503**    | The service is unavailable.                                             |
 
@@ -86,6 +86,22 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+
+    **1.6.0** - 2023/12/06
+    - (Certificates) PATCH /certificates/{certificate_id} - Add constraints for expired certificates
+    - (Certificates) POST /certificates/{certificate_id} - Add 409 HTTP status case
+    - (Certificates) GET /certificates/export - New endpoint to export certificates as CSV
+    - (Providers) GET /providers - Removed `verified`, `verified_at` and `verified_status` filters as never implemented
+    - (Providers) GET /providers/{provider_id}/bypass_token - Add 415 HTTP status case
+    - (Providers) PATCH /providers/{provider_id} - Allow `opts_contracts` property to be edited by MANAGER users
+    - (Providers) Add `BypassTokenId` schema
+    - (Providers) Update `BypassToken` schema to add `BypassTokenId` reference and specify required properties
+    - (Providers) Update `bypass_token` property in `Provider` schema
+    - (Providers) Remove `domains_allowed` mentions from `ProviderCreationRequest` schema and examples as property has been removed since 1.3.0 release
+    - (Providers) Updated `ProviderDetails` schema to add `deposit_notification_list` property and remove `last_verification` property
+    - (Users) GET /users - Add `created_at`, `updated_at` and `last_connected_at` properties to `UserSummaryView` schema
+    - (BPCO) GET /bpco/certificates - Add missing `Content-Length` response header
+    - (Description) Fix spelling error in 'Rate limiting'
 
     **1.5.0** - 2023/09/27
     - Include in `Description` section rate limiting logic
@@ -244,10 +260,10 @@ paths:
       description: |
         Update provider properties. Deleted providers cannot be updated.
 
-        **Allowed Roles**: *MAN_ADMINISTRATOR*, *ADMINISTRATOR*, *APNF*
+        **Allowed Roles**: *MAN_ADMINISTRATOR*, *ADMINISTRATOR*, *MANAGER*, *APNF*
 
         - *MAN_ADMINISTRATOR* and *APNF* users can update properties of any provider.
-        - *ADMINISTRATOR* users can update properties of their own provider. Only a subset of the provider properties can be updated by these users.
+        - *ADMINISTRATOR* and *MANAGER* users can update properties of their own provider. Only a subset of the provider properties can be updated by these users.
       operationId: UpdateProvider
       tags:
         - Providers
@@ -310,7 +326,7 @@ paths:
                   type: array
                   description: |
                     Change the list of providers allowed to select this provider as OPTS.
-                    - *MAN_ADMINISTRATOR*, *ADMINISTRATOR* and *APNF* users can update this property
+                    - *MAN_ADMINISTRATOR*, *ADMINISTRATOR*, *MANAGER* and *APNF* users can update this property
                     - Can be deleted.
                   items:
                     $ref: '#/components/schemas/ProviderCode'
@@ -497,6 +513,8 @@ paths:
           $ref: '#/components/responses/ErrorNoPermission'
         '406':
           $ref: '#/components/responses/ErrorInvalidAcceptHeader'
+        '415':
+          $ref: '#/components/responses/ErrorInvalidContentType'
         '429':
           $ref: '#/components/responses/ErrorRateLimiting'
         '500':
@@ -2143,6 +2161,22 @@ paths:
           $ref: '#/components/responses/ErrorNotFound'
         '406':
           $ref: '#/components/responses/ErrorInvalidAcceptHeader'
+        '409':
+          description: Returned when the API request cannot be fulfilled due to the object current status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPayloadError'
+              example:
+                code: CONFLICT
+                message: Cannot finalize an expired certificate.
+          headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            X-Correlation-Id:
+              $ref: '#/components/headers/X-Correlation-Id'
+            X-Response-Id:
+              $ref: '#/components/headers/X-Response-Id'
         '415':
           $ref: '#/components/responses/ErrorInvalidContentType'
         '429':
@@ -2157,7 +2191,8 @@ paths:
         Update certificate properties. Once the certificate has been created (for direct certificates)
         or finalized (for indirect certificates), only a subset of the certificate properties can be updated.
 
-        Indirect certificates that have not yet been finalised can have additional properties updated.
+        - Indirect certificates that have not yet been finalised can have additional properties updated.
+        - Expired certificates cannot be edited
 
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*
 
@@ -2639,6 +2674,131 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /certificates/export:
+    parameters:
+      - $ref: '#/components/parameters/X-Request-Id'
+    get:
+      summary: Retrieve a list of certificates in csv format with headers
+      description: |
+        The API applies any sort and filter preferences passed to the API request and returns a list of
+        corresponding results in csv format.
+        **Allowed Roles**: *MAN_ADMINISTRATOR*, *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*, *APNF*.
+        - *MAN_ADMINISTRATOR* and *APNF* users can access any certificate of any provider.
+        - *ADMINISTRATOR*, *MANAGER* and *SUPERVISOR* users can access any certificate attached to their provider.
+      operationId: ExportCertificates
+      tags:
+        - STI Certificates
+      parameters:
+        - name: query
+          in: query
+          description: |
+            Filter on a property following the format `operator:value`.
+            If the operator is `eq`, it can be ignored.
+            For string, number or date-time property:
+            * `eq` and `ne` = (not) equal.
+            * `in` and `not_in` = (not) in a list. `value` contains an array such as `[val1,val2,val3]`.
+            For string property only:
+            * `match` and `not_match` = (not) match the wildcard pattern (`*` for zero or more characters and `?` for a
+              single character) contains in `value`.
+            For number or date-time property:
+            * `gt` and `gte` = greater than (or equal).
+            * `lt` and `lte` = less than (or equal).
+            In any case, `value` must be percent encoded.
+            The parameter name is one of the following values:
+             - `id`
+             - `provider_id` (only for *MAN_ADMINISTRATOR* and *APNF* users)
+             - `type`
+             - `opts`
+             - `name`
+             - `valid_from`
+             - `valid_to`
+             - `test_certificate`
+             - `status`
+             - `renewal_auto`
+             - `renewal_after`
+             - `renewed_by`
+             - `url`
+             - `sn`
+             - `created_at`
+             - `created_by`
+             - `updated_at`
+             - `updated_by`
+             - `revoked_at`
+             - `revoked_by`
+             - `revoked_reason`
+          schema:
+            type: object
+            additionalProperties:
+              type: string
+              pattern: ^(((eq|ne|(not_)?match|[lg]te?):)?.+|(in|not_in):\[.+(,.+)*\])$
+            example:
+              provider_id: OPC000
+              created_at: gte:2022-01-01T00:00:00Z
+        - name: sort
+          in: query
+          description: |
+            Sort preference using the format `property_name:order`, where:
+            - `property_name` is one of the following values:
+              - `id`
+              - `provider_id` (only for *MAN_ADMINISTRATOR* and *APNF* users)
+              - `type`
+              - `opts`
+              - `name`
+              - `valid_from`
+              - `valid_to`
+              - `test_certificate`
+              - `url`
+              - `status`
+              - `renewal_auto`
+              - `renewal_after`
+              - `renewed_by`
+              - `sn`
+              - `created_at`
+              - `created_by`
+              - `updated_at`
+              - `updated_by`
+              - `revoked_at`
+              - `revoked_by`
+              - `revoked_reason`
+            - `order` may be set to `asc` or `desc`.
+          schema:
+            type: string
+            pattern: ^(id|provider_id|type|opts|name|valid_(from|to)|test_certificate|url|status|renew(al_a(uto|fter)|ed_by)|sn|(cre|upd)ated_(at|by)|revoked_(at|by|reason)):(([Aa]|[Dd][Ee])[Ss][Cc])$
+            example: name:asc
+      responses:
+        '200':
+          description: Return certificates list in csv format with headers
+          content:
+            text/csv:
+              schema:
+                type: string
+              example: |
+                ID;status;name;serial_number;type;provider_code;opts;valid_from;valid_to;renewal_auto;days_before_renewal;bpco_url;description;test_certificate
+                12;ACTIVE;Main Certificate;54e702c83df35b8a;DIRECT;SPC000;;2025-12-01T10:12:25Z;2026-01-01T10:12:25Z;true;9;https://api.man-bpco.fr/certs/SPC000/54e702c83df35b8a.cer;Description of the certificate.;false
+                13;ACTIVE;Certificate;4df1d562e7f009e6;DIRECT;SPE000;;2025-12-01T10:12:25Z;2026-01-01T10:12:25Z;true;9;https://api.man-bpco.fr/certs/SPE000/4df1d562e7f009e6.cer;Description of the certificate.;false
+          headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            X-Correlation-Id:
+              $ref: '#/components/headers/X-Correlation-Id'
+            X-Response-Id:
+              $ref: '#/components/headers/X-Response-Id'
+        '400':
+          $ref: '#/components/responses/ErrorValidation'
+        '401':
+          $ref: '#/components/responses/ErrorNotAuthenticated'
+        '403':
+          $ref: '#/components/responses/ErrorNoPermission'
+        '406':
+          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
+        '415':
+          $ref: '#/components/responses/ErrorInvalidContentType'
+        '429':
+          $ref: '#/components/responses/ErrorRateLimiting'
+        '500':
+          $ref: '#/components/responses/ErrorInternal'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /certificates/archives:
     get:
       summary: Retrieve a paginated list of records with support of sorting & filtering
@@ -3031,6 +3191,8 @@ paths:
                 type: string
                 format: binary
           headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
             Last-Modified:
               description: Last update date of STI certificates in the BPCO. Uses HTTP-Date format (RFC 7231)
               schema:
@@ -3578,14 +3740,23 @@ components:
           type: string
           description: Token identifier
           example: SPC000-YE42L73SGAG45I05
+    BypassTokenId:
+      type: string
+      pattern: ^([0-9A-Z]{6})-([0-9A-Z\-]{16})$
+      description: |
+        Token to be used in "Identity-Bypass" SIP INVITE message header when the provider has to temporarily disable its STI-AS component.
+        The expected format is `SPC-RANDOM`, where:
+        - SPC: APNF Service Provider Code
+        - RANDOM: 1 to 16 characters between A-Z, 0-A or '-'
+      example: APNF00-123456789-ABCDE
     BypassToken:
       type: object
-      description: Identity bypass token
+      required:
+        - id
+        - created_at
       properties:
         id:
-          type: string
-          description: Token identifier
-          example: SPC000-YE42L73SGAG45I05
+          $ref: '#/components/schemas/BypassTokenId'
         created_at:
           type: string
           description: |
@@ -3796,14 +3967,6 @@ components:
             - updated_at
             - updated_by
           properties:
-            bypass_token:
-              type: string
-              description: |
-                Token to be used in "Identity-Bypass" SIP INVITE message header when the provider has to temporarily disable its STI-AS component.
-                The expected format is `SPC-RANDOM`, where:
-                - SPC: APNF Service Provider Code
-                - RANDOM: 1 to 16 characters between A-Z, 0-A or '-'
-              example: SPC000-I2C93VMU9MQQIAAR
             deleted:
               type: boolean
               description: |
@@ -3857,6 +4020,8 @@ components:
                 is performed by the platform.
               nullable: true
               example: John Doe <john.doe@spa.domain>
+            bypass_token:
+              $ref: '#/components/schemas/BypassTokenId'
     ProviderCreationRequest:
       type: object
       description: Provider creation request data model
@@ -3972,19 +4137,6 @@ components:
             notification.
           type: boolean
           default: true
-        domains_allowed:
-          type: array
-          description: |
-            List of domain names allowed for user email addresses to be used for creating user accounts.
-            If no values are specified, any domain can be used for the provider user accounts.
-
-            If `authentication_mode` is set to `SSO`, any user which has one of these domains in this
-            email will be redirect to the provider IDP.
-          items:
-            type: string
-            maxLength: 255
-            description: Fully-qualified domain name
-            example: spa.domain
         sftp_allowed_keys:
           type: array
           description: |
@@ -4401,6 +4553,21 @@ components:
             and during that period a rollback of the delete action is possible using the `POST /users/{user_id}/undelete` API.
           default: false
           example: false
+        created_at:
+          type: string
+          description: Creation Date
+          format: date-time
+          example: '2022-01-17T10:12:25Z'
+        updated_at:
+          type: string
+          description: Last update Date
+          format: date-time
+          example: '2022-01-17T10:12:25Z'
+        last_connected_at:
+          type: string
+          description: Last connection Date
+          format: date-time
+          example: '2022-01-17T10:12:25Z'
     UserCreationRequest:
       type: object
       description: User creation request data model
@@ -5355,8 +5522,6 @@ components:
           - john.doe@spa.domain
           - jane.doe@spa.domain
         ticket_notification_active: true
-        domains_allowed:
-          - spa.domain
         sftp_allowed_ips:
           - 172.16.25.6
         languages:
@@ -5377,7 +5542,6 @@ components:
           - SPB000
           - SPC000
           - SPD000
-        bypass_token: SPC000-YE42L73SGAG45I05
         global_notification_list:
           - john.doe@spa.domain
           - jane.doe@spa.domain
@@ -5390,25 +5554,22 @@ components:
         ticketing_notification_list:
           - john.doe@spa.domain
           - jane.doe@spa.domain
+        deposit_notification_list:
+          - john.doe@spa.domain
+          - jane.doe@spa.domain
         ticket_notification_active: true
-        domains_allowed:
-          - spa.domain
         sftp_allowed_ips:
           - 172.16.25.6
         languages:
           - FRENCH
           - ENGLISH
         authentication_mode: MFA
-        last_verification:
-          id: 8709ff1a-df92-4c3b-a3b7-9d86e134791d
-          status: COMPLETED
-          decision: true
-          completed_at: '2022-05-18T10:12:25Z'
         deleted: false
         created_at: '2022-01-17T10:12:25Z'
         created_by: MAN Administrator <support@man-platform>
         updated_at: '2022-01-17T10:12:25Z'
         updated_by: MAN Administrator <support@man-platform>
+        bypass_token: SPC000-YE42L73SGAG45I05
     ProviderUpdateRequestByManAdministrator:
       summary: Request to update all possible provider properties with a MAN administrator user
       value:

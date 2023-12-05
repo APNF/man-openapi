@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.6.0 - 2023/11/28
+
+- (BPCO) (Description) Fix spelling error in 'Rate limiting'
+- (BPCO) (History) Set correct 1.5.1 version for 2023/10/05 release
+- (GCO) (Certificates) PATCH /certificates/{certificate_id} - Add constraints for expired certificates
+- (GCO) (Certificates) POST /certificates/{certificate_id} - Add 409 HTTP status case
+- (GCO) (Certificates) GET /certificates/export - New endpoint to export certificates as CSV
+- (GCO) (Providers) GET /providers - Removed `verified`, `verified_at` and `verified_status` filters as never implemented
+- (GCO) (Providers) GET /providers/{provider_id}/bypass_token - Add 415 HTTP status case
+- (GCO) (Providers) PATCH /providers/{provider_id} - Allow `opts_contracts` property to be edited by MANAGER users
+- (GCO) (Providers) Add `BypassTokenId` schema
+- (GCO) (Providers) Update `BypassToken` schema to add `BypassTokenId` reference and specify required properties
+- (GCO) (Providers) Update `bypass_token` property in `Provider` schema
+- (GCO) (Providers) Remove `domains_allowed` mentions from `ProviderCreationRequest` schema and examples as property has been removed since 1.3.0 release
+- (GCO) (Providers) Updated `ProviderDetails` schema to add `deposit_notification_list` property and remove `last_verification` property
+- (GCO) (Users) GET /users - Add `created_at`, `updated_at` and `last_connected_at` properties to `UserSummaryView` schema
+- (GCO) (BPCO) GET /bpco/certificates - Add missing `Content-Length` response header
+- (GCO) (Description) Fix spelling error in 'Rate limiting'
+
 ## 1.5.1 - 2023/10/05
 
 - (BPCO) (GET /ca) Update `version` format from integer to float

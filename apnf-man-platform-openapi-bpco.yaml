@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - BPCO API Reference
-  version: 1.5.1
+  version: 1.6.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -50,7 +50,7 @@ info:
     | **405**        | The method is not allowed for the resource.                             |
     | **406**        | The format in the `Accept` header is not supported.                     |
     | **409**        | There is a conflict between the object status and the action requested  |
-    | **429**        | Too many requests have been sent by the client (see Rate Limting).      |
+    | **429**        | Too many requests have been sent by the client (see Rate Limiting).      |
     | **500**        | An unexpected error occurred while processing the request.              |
     | **503**        | The service is unavailable.                                             |
 
@@ -70,7 +70,11 @@ info:
 
     # History
 
-    **1.5.0** - 2023/10/05
+    **1.6.0** - 2023/12/06
+    - (Description) Fix spelling error in 'Rate limiting'
+    - (History) - Set correct 1.5.1 version for 2023/10/05 release
+
+    **1.5.1** - 2023/10/05
     - (GET /ca) Update `version` format from integer to float
     - (GET /ca/certs) Update `version` format from integer to float
 
