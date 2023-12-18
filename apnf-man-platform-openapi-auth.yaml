@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - API Authentication Reference
-  version: 1.5.1
+  version: 1.6.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
