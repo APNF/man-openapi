@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: API for the emulated MAN GCO endpoints
-  version: 1.0.0
+  version: 1.0.1
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -78,7 +78,7 @@ info:
     | **406**    | The format in the `Accept` header is not supported.                     |
     | **409**    | There is a conflict between the object status and the action requested  |
     | **415**    | The format in the `Content-Type` header is not supported.               |
-    | **429**    | Too many requests have been sent by the client (see Rate Limting).                         |
+    | **429**    | Too many requests have been sent by the client (see Rate Limiting).     |
     | **500**    | An unexpected error occurred while processing the request.              |
     | **503**    | The service is unavailable.                                             |
 
@@ -99,6 +99,30 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+
+    **1.6.0** - 2023/12/13
+    - (Certificates) PATCH /certificates/{certificate_id} - Add constraints for expired certificates
+    - (Certificates) POST /certificates/{certificate_id} - Add 409 HTTP status case
+    - (Certificates) GET /certificates/export - New endpoint to export certificates as CSV
+    - (Providers) GET /providers/{provider_id} - New `legal_administrator` property to provide provider current legal administrator user.
+    - (Providers) GET /providers - Removed `verified`, `verified_at` and `verified_status` filters as never implemented
+    - (Providers) GET /providers/{provider_id}/bypass_token - Add 415 HTTP status case
+    - (Providers) PATCH /providers/{provider_id} - New `legal_administrator` property to change provider legal administrator user
+    - (Providers) PATCH /providers/{provider_id} - Allow `opts_contracts` property to be edited by MANAGER users
+    - (Providers) Add `BypassTokenId` schema
+    - (Providers) Update `BypassToken` schema to add `BypassTokenId` reference and specify required properties
+    - (Providers) Update `bypass_token` property in `Provider` schema
+    - (Providers) Remove `domains_allowed` mentions from `ProviderCreationRequest` schema and examples as property has been removed since 1.3.0 release
+    - (Providers) Updated `ProviderDetails` schema to add `deposit_notification_list` property and remove `last_verification` property
+    - (Users) GET /users - Add `created_at`, `updated_at` and `last_connected_at` properties to `UserSummaryView` schema
+    - (Users) GET /users - Grant API method access to the MANAGER role.
+    - (Users) GET /users/{user_id} - Grant API method access to the MANAGER role.
+    - (Users) GET /users/{user_id} - New `legal_administrator ` to see if user is legal administrator.
+    - (Users) POST /users – Allow APNF administrators to create provider administrator users
+    - (Users) PATCH /users - Allow APNF administrators to update the role of any provider user.
+    - (Users) POST /users/reset-credential - Rename original reset-password to enhance functionality by adding reset of OTP and resend new link of account activation.
+    - (BPCO) GET /bpco/certificates - Add missing `Content-Length` response header
+    - (Description) Fix spelling error in 'Rate limiting'
 
     **1.5.0** - 2023/09/27
     - Include in `Description` section rate limiting logic
@@ -222,6 +246,8 @@ paths:
                 type: string
                 format: binary
           headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
             Last-Modified:
               description: Last update date of STI certificates in the BPCO. Uses HTTP-Date format (RFC 7231)
               schema:
@@ -364,7 +390,7 @@ components:
             $ref: '#/components/schemas/ApiPayloadError'
           example:
             code: UNAUTHORIZED
-            message: User cannot be authenticated.
+            message: The authentication failed.
       headers:
         Content-Length:
           $ref: '#/components/headers/Content-Length'
