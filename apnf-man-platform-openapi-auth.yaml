@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - API Authentication Reference
-  version: 1.6.0
+  version: 1.7.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -44,6 +44,10 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+    **1.7.0** - 2024/09/01
+    - Reorder alphabetically components
+
+    **1.6.0** - N/A
 
     **1.5.0** - 2023/09/27
     - Clarify access token lifetime

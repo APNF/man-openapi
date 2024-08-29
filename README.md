@@ -15,6 +15,15 @@ If you are a service provider operating in France, you need to be registered as 
 If you are not yet a member, please contact the APNF.
 
 
+## MAN Platform API
+> [apnf-man-platform-openapi.yaml](apnf-man-platform-openapi.yaml) / (View in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/apnf/man-openapi/main/apnf-man-platform-openapi.yaml))
+
+MAN platform APIs to create and manage users, credentials, STI certificates and
+all other objects that service providers can handle on the MAN platform.
+
+More information is available in the OpenAPI file itself.
+
+
 ## Authentication API
 > [apnf-man-platform-openapi-auth.yaml](apnf-man-platform-openapi-auth.yaml) / (View in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/apnf/man-openapi/main/apnf-man-platform-openapi-auth.yaml))
 
@@ -26,10 +35,11 @@ More information is available in the OpenAPI file itself.
 ## GCO API
 > [apnf-man-platform-openapi-gco.yaml](apnf-man-platform-openapi-gco.yaml) / (View in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/apnf/man-openapi/main/apnf-man-platform-openapi-gco.yaml))
 
-This API reference explains how to get access to all MAN platform functionalities, especially the creation and management of STI certificates to be used by service providers for signing their SIP telephone calls per the STIR SHAKEN protocol.
+This API reference explains how to get access to MAN platform functionalities related to the creation and management of STI certificates to be used by service providers for signing their SIP telephone calls per the STIR SHAKEN protocol.
+
+This API is a subset of the [MAN Platform API](apnf-man-platform-openapi.yaml)
 
 More information is available in the OpenAPI file itself.
-
 
 ## BPCO API
 > [apnf-man-platform-openapi-bpco.yaml](apnf-man-platform-openapi-bpco.yaml) / (View in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/apnf/man-openapi/main/apnf-man-platform-openapi-bpco.yaml))
