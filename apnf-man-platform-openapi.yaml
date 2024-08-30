@@ -90,7 +90,6 @@ info:
 
     **1.7.0** - 2024/09/01
     - First release
-
 servers:
   - url: https://api.man-plateforme.fr/
     description: Production platform
@@ -3539,7 +3538,7 @@ paths:
                 renewal_after:
                   type: integer
                   description: |
-                    Number of days to wait after certificate creation (or finalization for an indirect certificate)
+                    Number of days to wait after certificate validity start date
                     for the automated certificate renewal process to be triggered.
 
                     Required if if `renewal_auto` is set to `true`.
@@ -3986,7 +3985,7 @@ paths:
                 renewal_after:
                   type: integer
                   description: |
-                    Change the number of days to wait after certificate creation/finalization to trigger the automatic renewal process.
+                    Change the number of days to wait after certificate validity start date to trigger the automatic renewal process.
                     - Can be changed for both direct and indirect certificates
                     - Can be changed only by the origin service provider
                     - Cannot be deleted if `renewal_auto` is set to `true` for this certificate.
@@ -4182,7 +4181,7 @@ paths:
                 renewal_after:
                   type: integer
                   description: |
-                    Number of days after certificate creation (or finalization for indirect certificates) to wait for
+                    Number of days after certificate validity start date to wait for
                     the automated certificate renewal process to be triggered.
 
                     Can be specified only if `renewal_auto` is set to `true`.
@@ -6448,8 +6447,8 @@ components:
         renewal_after:
           type: integer
           description: |
-            Number of days after certificate creation to wait for the automated certificate renewal process to be
-            triggered.
+            Number of days after certificate validity start date to wait
+            for the automated certificate renewal process to be triggered.
             Set only if `renewal_auto` is set to `true`.
           example: 300
         renewed_by:
@@ -7068,8 +7067,8 @@ components:
         renewal_after:
           type: integer
           description: |
-            Number of days after certificate creation to wait for the automated certificate renewal process to be
-            triggered.
+            Number of days after certificate validity start date to wait
+            for the automated certificate renewal process to be triggered.
             Set only if `renewal_auto` is set to `true`.
           example: 300
         status:
@@ -7791,6 +7790,7 @@ components:
         - JUSTIFIED
         - REJECTED
         - WRONGLY_OPENED
+        - AUTOMATICALLY_CLOSED
     TicketSignatory:
       type: string
       description: |
