@@ -4749,6 +4749,59 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /history:
+    get:
+      summary: Retrieve platform activity history
+      description: |
+        Retrieve a paginated list of all actions performed on any data accessible to the user.
+        Sorting and filtering are not supported for this API.
+
+        **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
+
+        - *ADMINISTRATOR* and *SUPERVISOR* can access the history of any data attached to their own provider.
+        - *MANAGER* users can access the history on their own account or on certificates owned by their provider
+      operationId: GetHistory
+      tags:
+        - History
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationOffset'
+        - $ref: '#/components/parameters/X-Request-Id'
+      responses:
+        '200':
+          description: Return a paginated list of history records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    $ref: '#/components/schemas/PaginationMetaData'
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/History'
+          headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            X-Correlation-Id:
+              $ref: '#/components/headers/X-Correlation-Id'
+            X-Response-Id:
+              $ref: '#/components/headers/X-Response-Id'
+        '400':
+          $ref: '#/components/responses/ErrorValidation'
+        '401':
+          $ref: '#/components/responses/ErrorNotAuthenticated'
+        '403':
+          $ref: '#/components/responses/ErrorNoPermission'
+        '406':
+          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
+        '429':
+          $ref: '#/components/responses/ErrorRateLimiting'
+        '500':
+          $ref: '#/components/responses/ErrorInternal'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /bpco/certificates:
     head:
       summary: Get STI certificates last update date in BPCO
