@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0 - 2024/09/01
+## 1.7.0 - 2024/09/09
 
 - (Plateform) New Open API file for APNF MAN Platform - Platform API Reference
 - (GCO) (Certificates) Add `INVALIDATION` status to be used during CA compromission

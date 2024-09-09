@@ -44,7 +44,7 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
-    **1.7.0** - 2024/09/01
+    **1.7.0** - 2024/09/09
     - Reorder alphabetically components
 
     **1.6.0** - N/A

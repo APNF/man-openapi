@@ -69,7 +69,7 @@ info:
     - **MAN Platform Authentication API Reference**, providing the APIs to create access tokens require to authenticate against the APIs listed in this document.
 
     # History
-    **1.7.0** - 2024/09/01
+    **1.7.0** - 2024/09/09
     - Reorder alphabetically components
 
     **1.6.0** - 2023/12/13
