@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0 - 2024/09/09
+
+- (Plateform) New Open API file for APNF MAN Platform - Platform API Reference
+- (GCO) (Certificates) Add `INVALIDATION` status to be used during CA compromission
+- (GCO) (Certificates) New API method - GET /certificates/export
+- (GCO) (Providers) Cleanup provider unused examples and schemas
+- (GCO) (Providers) Remove users and history API methods as available as part of the **MAN Platform API Reference** document.
+
+
 ## 1.6.0 - 2023/12/13
 
 - (BPCO) (Description) Fix spelling error in 'Rate limiting'
