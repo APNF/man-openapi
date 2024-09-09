@@ -91,7 +91,7 @@ info:
 
     # History
 
-    **1.7.0** - 2024/02/11
+    **1.7.0** - 2024/09/09
     - (Certificates) Add `INVALIDATION` status to be used during CA compromission
     - (Certificates) New API method - GET /certificates/export
     - (Providers) GET /providers/{provider_id}/bypass_token - Rename response from `records` to `bypass_tokens`
