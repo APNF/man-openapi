@@ -12,7 +12,7 @@ info:
     # API for the emulated MAN GCO endpoints
 
     This is the OpenAPI specification for the GCO endpoints, as provided by APNF under the CC-BY-SA-4.0 license,
-    and edited by Metaswitch (a Microsoft company) under the same license. These edits remove several endpoints,
+    and edited by Metaswitch (an Alianza company) under the same license. These edits remove several endpoints,
     methods, request and response parameters, and response codes from the APNF version for Metaswitch's client-side
     use-case, and make minor adjustments to the description fields for nicer output with the Swagger OpenAPI tool.
 

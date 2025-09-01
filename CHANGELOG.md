@@ -1,6 +1,6 @@
 # Metaswitch changelog
 
-The below Changelog is from the APNF branch, from which this is forked. The changes made by Metaswitch (a Microsoft company) to the individual APIs are documented within those files. The versioning in those files is also the Metaswitch versioning and does not match the versions below in this Changelog.
+The below Changelog is from the APNF branch, from which this is forked. The changes made by Metaswitch (an Alianza company) to the individual APIs are documented within those files. The versioning in those files is also the Metaswitch versioning and does not match the versions below in this Changelog.
 
 ## Version correlation (APNF -> Metaswitch)
 - (AUTH): 1.6.0 -> 1.0.0
