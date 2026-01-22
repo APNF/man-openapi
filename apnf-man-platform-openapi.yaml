@@ -10,8 +10,8 @@ info:
     The APIs listed in this reference provide all functionalities available to service providers, including:
     - create and manage the STI certificates to be used for signing their SIP telephone calls per the STIR SHAKEN
     protocol
-    - crate and manage along with functionalities to manage access to the MAN platform.
-    - crate and manage users who shall be given access to the platform
+    - create and manage along with functionalities to manage access to the MAN platform.
+    - create and manage users who shall be given access to the platform
 
     Each provider registered with the APNF may request an access to the MAN platform and therefore these APIs.
 
