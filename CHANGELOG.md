@@ -17,6 +17,7 @@
 - (PTF) (Tickets) New GET /ticket/export API to export tickets
 - (PTF) (Tickets) `author_ticket_internal_id` is now updatable
 - (PTF) (Tickets) new properties available in data model
+- (PTF) (Description) Spelling errors
 
 ## 1.7.0 - 2024/09/09
 
