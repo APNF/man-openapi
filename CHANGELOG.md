@@ -1,13 +1,37 @@
 # Changelog
 
+## 1.7.1 - 2025/06/05
+
+- (BPCO) (Certificates) Update serial_number min size limit to 16 characters
+- (GCO) (Certificates) Update serial_number min size limit to 16 characters
+- (GCO) (Certificates) GET /certificates - add `provider_code` property as allowed sort criteria
+- (GCO) (Certificates) Add `issuer_dn` and `renewed_by` in certificate data model
+- (PTF) (Certificates) Update serial_number min size limit to 16 characters
+- (PTF) (CallTraces) GET /calltraces - new query parameters `provider_disengagement`, `exclude_self_author` and `search_type`
+- (PTF) (Certificates) GET /certificates - add `provider_code` property as allowed sort criteria
+- (PTF) (Certificates) Add `issuer_dn` and `renewed_by` in certificate data model
+- (PTF) (Meteo) Increase `long_description` maximum size for meteo event from 1000 to 5000 characters
+- (PTF) (Providers) GET /providers/referential - give access to supervisor users
+- (PTF) (Providers) GET /providers/referential - add technical number in CSV response
+- (PTF) (Providers) GET /ticket - add `modification_date` property as allowed sort criteria
+- (PTF) (Tickets) New GET /ticket/export API to export tickets
+- (PTF) (Tickets) `author_ticket_internal_id` is now updatable
+- (PTF) (Tickets) new properties available in data model
+
 ## 1.7.0 - 2024/09/09
 
-- (Plateform) New Open API file for APNF MAN Platform - Platform API Reference
+- New Open API file for APNF MAN Platform - Platform API Reference
+- (AUTH) Reorder alphabetically components
+- (BPCO) Reorder alphabetically components
 - (GCO) (Certificates) Add `INVALIDATION` status to be used during CA compromission
 - (GCO) (Certificates) New API method - GET /certificates/export
-- (GCO) (Providers) Cleanup provider unused examples and schemas
+- (GCO) (Providers) GET /providers/{provider_id}/bypass_token - Rename response from `records` to `bypass_tokens`
 - (GCO) (Providers) Remove users and history API methods as available as part of the **MAN Platform API Reference** document.
+- (GCO) (Providers) Cleanup provider unused examples and schemas
 
+## 1.6.1 - 2024/04/30
+
+- (GCO) (Certificates) Update `renewal_after` property description - certificate renewal delay is based on certificate validity start date
 
 ## 1.6.0 - 2023/12/13
 

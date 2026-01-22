@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - GCO API Reference
-  version: 1.7.0
+  version: 1.7.1
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -91,12 +91,20 @@ info:
 
     # History
 
+    **1.7.1** - 2025/06/05
+    - Update serial_number min size limit to 16 characters
+    - GET /certificates - add `provider_code` property as allowed sort criteria
+    - `Certificate` - Add `issuer_dn` and `renewed_by` in certificate data model
+
     **1.7.0** - 2024/09/09
     - (Certificates) Add `INVALIDATION` status to be used during CA compromission
     - (Certificates) New API method - GET /certificates/export
     - (Providers) GET /providers/{provider_id}/bypass_token - Rename response from `records` to `bypass_tokens`
-    - (Providers) Cleanup provider unused examples and schemas
     - (Providers) Remove users and history API methods as available as part of the **MAN Platform API Reference** document.
+    - (Providers) Cleanup provider unused examples and schemas
+
+    **1.6.1** - 2024/04/30
+    - (Certificates) Update `renewal_after` property description - certificate renewal delay is based on certificate validity start date
 
     **1.6.0** - 2023/12/13
     - (Certificates) PATCH /certificates/{certificate_id} - Add constraints for expired certificates
@@ -690,7 +698,7 @@ paths:
                 renewal_after:
                   type: integer
                   description: |
-                    Number of days to wait after certificate creation (or finalization for an indirect certificate)
+                    Number of days to wait after certificate validity start date
                     for the automated certificate renewal process to be triggered.
 
                     Required if if `renewal_auto` is set to `true`.
@@ -860,10 +868,11 @@ paths:
               - `updated_at`
               - `revoked_at`
               - `revoked_reason`
+              - `provider_code`
             - `order` may be set to `asc` or `desc`.
           schema:
             type: string
-            pattern: ^(id|provider_id|type|opts|name|valid_(from|to)|test_certificate|url|status|renew(al_a(uto|fter)|ed_by)|sn|(cre|upd)ated_(at|by)|revoked_(at|by|reason)):(([Aa]|[Dd][Ee])[Ss][Cc])$
+            pattern: ^(id|provider_id|type|opts|name|valid_(from|to)|test_certificate|url|status|renew(al_a(uto|fter)|ed_by)|sn|(cre|upd)ated_(at|by)|revoked_(at|by|reason)|provider_code):(([Aa]|[Dd][Ee])[Ss][Cc])$
             example: name:asc
         - $ref: '#/components/parameters/X-Request-Id'
       responses:
@@ -1137,7 +1146,7 @@ paths:
                 renewal_after:
                   type: integer
                   description: |
-                    Change the number of days to wait after certificate creation/finalization to trigger the automatic renewal process.
+                    Change the number of days to wait after certificate validity start date to trigger the automatic renewal process.
                     - Can be changed for both direct and indirect certificates
                     - Can be changed only by the origin service provider
                     - Cannot be deleted if `renewal_auto` is set to `true` for this certificate.
@@ -1333,7 +1342,7 @@ paths:
                 renewal_after:
                   type: integer
                   description: |
-                    Number of days after certificate creation (or finalization for indirect certificates) to wait for
+                    Number of days after certificate validity start date to wait for
                     the automated certificate renewal process to be triggered.
 
                     Can be specified only if `renewal_auto` is set to `true`.
@@ -2278,6 +2287,8 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+security:
+  - access_token: []
 components:
   examples:
     BypassTokenCreationResponse:
@@ -2336,6 +2347,7 @@ components:
         revoked_by: John Doe <john.doe@spa.domain>
         revoked_reason: keyCompromise
         revoked_comments: Clé privée compromise
+        issuer_dn: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     DirectCertificate:
       summary: Details of an active direct certificate
       value:
@@ -2385,6 +2397,7 @@ components:
         created_by: John Doe <john.doe@spa.domain>
         updated_at: '2022-01-17T10:12:25Z'
         updated_by: John Doe <john.doe@spa.domain>
+        issuer_dn: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     DirectCertificateRequest:
       summary: Request for a direct certificate
       value:
@@ -2459,6 +2472,7 @@ components:
         created_by: John Doe <john.doe@spa.domain>
         updated_at: '2022-01-17T10:12:25Z'
         updated_by: Jane Doe <jane.doe@spb>
+        issuer_dn: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     IndirectCertificateRequest:
       summary: Request for an indirect certificate
       value:
@@ -2998,7 +3012,7 @@ components:
         sn:
           type: string
           description: Certificate serial number
-          pattern: ^([0-9A-Fa-f]{2,40})$
+          pattern: ^([0-9A-Fa-f]{16,40})$
           example: 57ABB34BCA510043BDE438460F13B27E6A82C004
     BypassToken:
       type: object
@@ -3113,8 +3127,8 @@ components:
         renewal_after:
           type: integer
           description: |
-            Number of days after certificate creation to wait for the automated certificate renewal process to be
-            triggered.
+            Number of days after certificate validity start date to wait
+            for the automated certificate renewal process to be triggered.
             Set only if `renewal_auto` is set to `true`.
           example: 300
         renewed_by:
@@ -3129,7 +3143,7 @@ components:
         sn:
           type: string
           description: Certificate serial number
-          pattern: ^([0-9A-Fa-f]{2,40})$
+          pattern: ^([0-9A-Fa-f]{16,40})$
           example: 57ABB34BCA510043BDE438460F13B27E6A82C004
         contents:
           type: string
@@ -3233,6 +3247,11 @@ components:
             Additional comments on the reason associated with the certificate revocation.
             Set only if the certificate has been revoked, i.e if `status` is set to `REVOKED`.
           example: Clé privée compromise
+        issuer_dn:
+          type: string
+          description: |
+            Distinguished Name of the certificate issuer.
+          example: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     CertificateId:
       description: ID of the certificate. Must be unique.
       type: string
@@ -3265,6 +3284,8 @@ components:
         - status
         - archived
         - renewal_auto
+        - renewed_by
+        - issuer_dn
       properties:
         id:
           $ref: '#/components/schemas/CertificateId'
@@ -3318,10 +3339,14 @@ components:
             Automated renewal option. If enabled, the application will create a new certificate using the same CSR and
             options provided for this certificate.
           example: true
+        renewed_by:
+          allOf:
+            - description: ID of the new certificate that replaces this certificate.
+            - $ref: '#/components/schemas/UUID'
         sn:
           type: string
           description: Certificate serial number
-          pattern: ^([0-9A-Fa-f]{2,40})$
+          pattern: ^([0-9A-Fa-f]{16,40})$
           example: 57ABB34BCA510043BDE438460F13B27E6A82C004
     CertificateType:
       type: string
@@ -3542,8 +3567,8 @@ components:
         renewal_after:
           type: integer
           description: |
-            Number of days after certificate creation to wait for the automated certificate renewal process to be
-            triggered.
+            Number of days after certificate validity start date to wait
+            for the automated certificate renewal process to be triggered.
             Set only if `renewal_auto` is set to `true`.
           example: 300
         status:
@@ -3939,6 +3964,7 @@ components:
         - renewal_auto
         - created_at
         - created_by
+        - issuer_dn
     UUID:
       type: string
       format: uuid
