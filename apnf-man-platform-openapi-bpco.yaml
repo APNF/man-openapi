@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - BPCO API Reference
-  version: 1.7.0
+  version: 1.7.1
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -69,6 +69,10 @@ info:
     - **MAN Platform Authentication API Reference**, providing the APIs to create access tokens require to authenticate against the APIs listed in this document.
 
     # History
+
+    **1.7.1** - 2025/06/05
+    - Update serial_number min size limit to 16 characters
+
     **1.7.0** - 2024/09/09
     - Reorder alphabetically components
 
@@ -726,7 +730,7 @@ components:
       required: true
       schema:
         type: string
-        pattern: ^([0-9A-Fa-f]{2,40})$
+        pattern: ^([0-9A-Fa-f]{16,40})$
         example: 57ABB34BCA510043BDE438460F13B27E6A82C004
     If-Modified-Since:
       name: If-Modified-Since

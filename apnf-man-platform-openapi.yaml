@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - Platform API Reference
-  version: 1.7.0
+  version: 1.7.1
   description: |
     # Introduction
 
@@ -10,8 +10,8 @@ info:
     The APIs listed in this reference provide all functionalities available to service providers, including:
     - create and manage the STI certificates to be used for signing their SIP telephone calls per the STIR SHAKEN
     protocol
-    - crate and manage along with functionalities to manage access to the MAN platform.
-    - crate and manage users who shall be given access to the platform
+    - create and manage along with functionalities to manage access to the MAN platform.
+    - create and manage users who shall be given access to the platform
 
     Each provider registered with the APNF may request an access to the MAN platform and therefore these APIs.
 
@@ -87,6 +87,19 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+
+    **1.7.1** - 2025/06/05
+    - (Certificates) Update serial_number min size limit to 16 characters
+    - (CallTraces) GET /calltraces - new query parameters `provider_disengagement`, `exclude_self_author` and `search_type`
+    - (Certificates) GET /certificates - add `provider_code` property as allowed sort criteria
+    - (Certificates) Add `issuer_dn` and `renewed_by` in certificate data model
+    - (Meteo) Increase `long_description` maximum size for meteo event from 1000 to 5000 characters
+    - (Providers) GET /providers/referential - give access to supervisor users
+    - (Providers) GET /providers/referential - add technical number in CSV response
+    - (Providers) GET /ticket - add `modification_date` property as allowed sort criteria
+    - (Tickets) New GET /ticket/export API to export tickets
+    - (Tickets) `author_ticket_internal_id` is now updatable
+    - (Tickets) new properties available in data model
 
     **1.7.0** - 2024/09/09
     - First release
@@ -228,6 +241,9 @@ paths:
              - `displayed_number`
              - `pai`
              - `called_number`
+             - `provider_disengagement` (Yes/No value)
+             - `exclude_self_author` (Yes/No value)
+             - `search_type` (empty, `sip_428` or `disengaged`)
 
             If the `searched_provider` is used (only for *MAN_ADMINISTRATOR* and *APNF* users), the
             request will return any traces where the `searched_provider` is the `author_provider`,
@@ -237,6 +253,10 @@ paths:
             `searched_provider` has the role present into `searched_provider_role`
             (`author_provider`, `optv`, `opts`, `egress_provider`, `terminating_provider`,
             `signatory_provider` or `ingress_provider`).
+            If the `exclude_self_author` is used, the request will return any trace where the `author_provider` is
+            different from the current user's provider.
+            If `search_type` is set to `sip_428`, the request will return traces from ANY provider where `sip_reject_code` equals `428`.
+            If `search_type` is set to `disengaged`, the request will return traces from ANY provider where `provider_disengagement` equals `Yes`.
           schema:
             additionalProperties:
               type: string
@@ -435,7 +455,6 @@ paths:
       summary: Initiate the creation of a monitored SIP interconnection
       description: |
         Initiate the creation of a new monitored SIP interconnection. Shall always be called by the provider emitter of the interconnection.
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
       operationId: CreateIsm
       tags:
@@ -869,7 +888,6 @@ paths:
       summary: Return details of a meteo event
       description: |
         Return a JSON object with meteo event details
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
 
         - Any user can read the events
@@ -923,7 +941,6 @@ paths:
       summary: Update a meteo event
       description: |
         Update a meteo event, for example to add an end date
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
 
         - *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR* can modify events created by their provider
@@ -983,126 +1000,6 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /providers/code_name:
-    get:
-      summary: Return a dictionnary of provider names by provider code.
-      description: |
-        Dictionary of provider names by provider code that are not deleted.
-
-        **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
-      operationId: GetProvidersCodeName
-      tags:
-        - Providers
-      parameters:
-        - $ref: '#/components/parameters/X-Request-Id'
-      responses:
-        '200':
-          description: Return a dictionnary of provider names by provider code
-          content:
-            application/json:
-              schema:
-                additionalProperties:
-                  type: string
-                example:
-                  SPA000: Opérateur SPA000
-                  SPA001: Opérateur SPA001
-                type: object
-          headers:
-            Content-Length:
-              $ref: '#/components/headers/Content-Length'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '401':
-          $ref: '#/components/responses/ErrorNotAuthenticated'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
-        '429':
-          $ref: '#/components/responses/ErrorRateLimiting'
-        '500':
-          $ref: '#/components/responses/ErrorInternal'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-  /providers/id_code:
-    get:
-      summary: Return a dictionnary of provider names by provider code.
-      description: |
-        Dictonary of provider codes by provider id.
-
-        **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
-      operationId: GetProvidersIdCode
-      tags:
-        - Providers
-      parameters:
-        - $ref: '#/components/parameters/X-Request-Id'
-      responses:
-        '200':
-          description: Return a dictionnary of provider codes by provider id.
-          content:
-            application/json:
-              schema:
-                additionalProperties:
-                  type: string
-                example:
-                  aa120f71-d6a2-41fb-8ba1-eb710ba3a076: SPA000
-                  92d44669-df5b-4ce2-b7d4-48ea18407a4a: SPA001
-                type: object
-          headers:
-            Content-Length:
-              $ref: '#/components/headers/Content-Length'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '401':
-          $ref: '#/components/responses/ErrorNotAuthenticated'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
-        '429':
-          $ref: '#/components/responses/ErrorRateLimiting'
-        '500':
-          $ref: '#/components/responses/ErrorInternal'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-  /providers/opts:
-    get:
-      summary: Return the APNF codes of allowed OPTS providers
-      description: |
-        Return the APNF codes for all service providers that can operate as OPTS.
-
-        **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
-      operationId: GetOPTSProviders
-      tags:
-        - Providers
-      parameters:
-        - $ref: '#/components/parameters/X-Request-Id'
-      responses:
-        '200':
-          description: Return a list of OPTS providers
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ProviderCode'
-                type: array
-          headers:
-            Content-Length:
-              $ref: '#/components/headers/Content-Length'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-        '401':
-          $ref: '#/components/responses/ErrorNotAuthenticated'
-        '406':
-          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
-        '429':
-          $ref: '#/components/responses/ErrorRateLimiting'
-        '500':
-          $ref: '#/components/responses/ErrorInternal'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
   /providers/referential:
     get:
       summary: Retrieve a listing of all service providers in .csv format.
@@ -1115,7 +1012,7 @@ paths:
           - a label related to the provider (string)
           - whether or not the provider subscribed to MAN (boolean)
 
-        **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*
+        **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
       operationId: GetProvidersReferential
       tags:
         - Providers
@@ -1129,8 +1026,8 @@ paths:
               schema:
                 type: string
               example: |
-                arcep_code;apnf_code;label;subscription
-                GAMMA0;GAMMA0;Provider Label;true
+                arcep_code;apnf_code;label;subscription;technical_number
+                GAMMA0;GAMMA0;Provider Label;true;+33102030405
           headers:
             Content-Length:
               $ref: '#/components/headers/Content-Length'
@@ -1530,6 +1427,7 @@ paths:
       description: |
         Retrieve a paginated list of all actions performed on the provider.
         Sorting and filtering are not supported for this API.
+
 
         **Allowed Roles**: *ADMINISTRATOR*
 
@@ -1961,58 +1859,6 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /users/preview/{role}/provider/{provider_id}:
-    get:
-      summary: Return complete list of users of a given provider and role
-      description: |
-        Return the list of all users of the given provider and with specified role.
-
-        **Allowed Roles**: *ADMINISTRATOR*
-      operationId: PreviewUserRoleInProvider
-      tags:
-        - Users
-      parameters:
-        - name: role
-          in: path
-          description: Role of the user
-          required: true
-          schema:
-            $ref: '#/components/schemas/UserRole'
-        - $ref: '#/components/parameters/ProviderId'
-        - $ref: '#/components/parameters/X-Request-Id'
-      responses:
-        '200':
-          description: Return a JSON object mapping uuid with user detail
-          headers:
-            Content-Length:
-              $ref: '#/components/headers/Content-Length'
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
-          content:
-            application/json:
-              examples:
-                ProviderUser:
-                  $ref: '#/components/examples/UserPreview'
-              schema:
-                additionalProperties:
-                  type: string
-                example:
-                  68831c50-2953-4047-9935-81a98ac1e1e1: John Doe <john.doe@example.com>
-                type: object
-        '400':
-          $ref: '#/components/responses/ErrorValidation'
-        '401':
-          $ref: '#/components/responses/ErrorNotAuthenticated'
-        '403':
-          $ref: '#/components/responses/ErrorNoPermission'
-        '404':
-          $ref: '#/components/responses/ErrorNotFound'
-        '500':
-          $ref: '#/components/responses/ErrorInternal'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
   /users/{user_id}:
     get:
       summary: Return user details
@@ -2118,7 +1964,7 @@ paths:
                     Change the user mobile phone number
                     - A user can update this property for its own account
                     - Cannot be deleted.
-                  example: 6123456789
+                  example: '06123456789'
                 language:
                   allOf:
                     - $ref: '#/components/schemas/Language'
@@ -2134,7 +1980,7 @@ paths:
                         Change the user role
                         - A user cannot update this property for its own account
                         - Can be updated by ADMINISTRATOR users for accounts belonging to their provider
-                        - Can be updated by MAN_ADMINISTRATOR users for MAN_ADMINISTRATOR and APNF accounts
+                        - Can be updated by MAN_ADMINISTRATOR users for MAN_ADMINISTRATOR and APNF accounts.
                         - Cannot be deleted.
                 status:
                   type: string
@@ -2416,7 +2262,6 @@ paths:
       summary: Return portal preferences of the user
       description: |
         Return portal preferences of the user.
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
       operationId: GetUserPref
       tags:
@@ -2458,7 +2303,6 @@ paths:
       summary: Update portal preferences of the user
       description: |
         Update portal preferences of the user.
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
       operationId: UpdateUserPref
       tags:
@@ -2620,11 +2464,12 @@ paths:
              - `provider_author_apnf_code`
              - `next_action_required_by`
              - `creation_date`
+             - `modification_date`
 
             * `order` may be set to `asc` or `desc`.
           schema:
             type: string
-            pattern: ^(status|reference_id|(issue|communication)_type|criticality|provider_author_apnf_code|next_action_required_by|creation_date):(([Aa]|[Dd][Ee])[Ss][Cc])$
+            pattern: ^(status|reference_id|(issue|communication)_type|criticality|provider_author_apnf_code|next_action_required_by|(creation|modification)_date):(([Aa]|[Dd][Ee])[Ss][Cc])$
             example: start_date:asc
         - $ref: '#/components/parameters/X-Request-Id'
       responses:
@@ -2765,7 +2610,6 @@ paths:
       summary: Return details of a ticket
       description: |
         Return a JSON object with ticket details
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
 
         - *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*: can retrieve tickets where they are involved.
@@ -2980,10 +2824,8 @@ paths:
       summary: Comment a ticket and send a notification.
       description: |
         Adds a comment to the ticket.
-
         The first time the ticket is commented by the recipient provider, the status is automatically updated to "in progress"
         Sends a notification to the other involved providers (notification will be sent to all email addresses defined for the providers)
-
         **Allowed Roles**: *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR*
 
         - *ADMINISTRATOR*, *MANAGER*, *SUPERVISOR* users can comment tickets they are involved in.
@@ -3708,10 +3550,11 @@ paths:
               - `updated_at`
               - `revoked_at`
               - `revoked_reason`
+              - `provider_code`
             - `order` may be set to `asc` or `desc`.
           schema:
             type: string
-            pattern: ^(id|provider_id|type|opts|name|valid_(from|to)|test_certificate|url|status|renew(al_a(uto|fter)|ed_by)|sn|(cre|upd)ated_(at|by)|revoked_(at|by|reason)):(([Aa]|[Dd][Ee])[Ss][Cc])$
+            pattern: ^(id|provider_id|type|opts|name|valid_(from|to)|test_certificate|url|status|renew(al_a(uto|fter)|ed_by)|sn|(cre|upd)ated_(at|by)|revoked_(at|by|reason)|provider_code):(([Aa]|[Dd][Ee])[Ss][Cc])$
             example: name:asc
         - $ref: '#/components/parameters/X-Request-Id'
       responses:
@@ -5288,6 +5131,7 @@ components:
         revoked_by: John Doe <john.doe@spa.domain>
         revoked_reason: keyCompromise
         revoked_comments: Clé privée compromise
+        issuer_dn: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     DirectCertificate:
       summary: Details of an active direct certificate
       value:
@@ -5337,6 +5181,7 @@ components:
         created_by: John Doe <john.doe@spa.domain>
         updated_at: '2022-01-17T10:12:25Z'
         updated_by: John Doe <john.doe@spa.domain>
+        issuer_dn: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     DirectCertificateRequest:
       summary: Request for a direct certificate
       value:
@@ -5411,6 +5256,7 @@ components:
         created_by: John Doe <john.doe@spa.domain>
         updated_at: '2022-01-17T10:12:25Z'
         updated_by: Jane Doe <jane.doe@spb>
+        issuer_dn: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     IndirectCertificateRequest:
       summary: Request for an indirect certificate
       value:
@@ -5794,9 +5640,6 @@ components:
         email_address: jane.doe@spa.domain
         mobile_phone: '0612345678'
         language: ENGLISH
-    UserPreview:
-      summary: Map of <uuid>:<firsname> <lastname> <<email>>
-      value: 155720a6-f4c9-40ec-b479-a32d7f062553:"John doe <john.doe@example.com>"
     UserUpdateRequest:
       summary: Request to update all possible properties for another account
       value:
@@ -6385,7 +6228,7 @@ components:
         sn:
           type: string
           description: Certificate serial number
-          pattern: ^([0-9A-Fa-f]{2,40})$
+          pattern: ^([0-9A-Fa-f]{16,40})$
           example: 57ABB34BCA510043BDE438460F13B27E6A82C004
     BypassToken:
       type: object
@@ -6516,7 +6359,7 @@ components:
         sn:
           type: string
           description: Certificate serial number
-          pattern: ^([0-9A-Fa-f]{2,40})$
+          pattern: ^([0-9A-Fa-f]{16,40})$
           example: 57ABB34BCA510043BDE438460F13B27E6A82C004
         contents:
           type: string
@@ -6620,6 +6463,11 @@ components:
             Additional comments on the reason associated with the certificate revocation.
             Set only if the certificate has been revoked, i.e if `status` is set to `REVOKED`.
           example: Clé privée compromise
+        issuer_dn:
+          type: string
+          description: |
+            Distinguished Name of the certificate issuer.
+          example: CN=BPCO CA1 - SHAKEN Intermediate,O=Base des Certificats Opérateurs,OU=Certificate Authority,C=FR
     CertificateId:
       description: ID of the certificate. Must be unique.
       type: string
@@ -6652,6 +6500,8 @@ components:
         - status
         - archived
         - renewal_auto
+        - renewed_by
+        - issuer_dn
       properties:
         id:
           $ref: '#/components/schemas/CertificateId'
@@ -6705,10 +6555,14 @@ components:
             Automated renewal option. If enabled, the application will create a new certificate using the same CSR and
             options provided for this certificate.
           example: true
+        renewed_by:
+          allOf:
+            - description: ID of the new certificate that replaces this certificate.
+            - $ref: '#/components/schemas/UUID'
         sn:
           type: string
           description: Certificate serial number
-          pattern: ^([0-9A-Fa-f]{2,40})$
+          pattern: ^([0-9A-Fa-f]{16,40})$
           example: 57ABB34BCA510043BDE438460F13B27E6A82C004
     CertificateType:
       type: string
@@ -6951,7 +6805,7 @@ components:
           type: string
           description: A short description of the event
           example: 'L''opérateur OPE1 est en débrayage car il a rencontré un problème lors d''une opération de... '
-          maxLength: 1000
+          maxLength: 5000
         short_description:
           type: string
           description: A short description of the event
@@ -6995,7 +6849,7 @@ components:
         long_description:
           type: string
           description: A short description of the event
-          maxLength: 1000
+          maxLength: 5000
           example: 'L''opérateur OPE1 est en débrayage car il a rencontré un problème lors d''une opération de... '
         short_description:
           type: string
@@ -7549,6 +7403,7 @@ components:
         - renewal_auto
         - created_at
         - created_by
+        - issuer_dn
     Ticket:
       allOf:
         - $ref: '#/components/schemas/TicketForCreation'
@@ -7601,6 +7456,10 @@ components:
             - status
             - reference_id
         - type: object
+    TicketAuthorInternalId:
+      type: string
+      description: Ticket author's internal ID
+      example: My_Internal_ID123
     TicketCategory:
       type: string
       description: the category for the typology
@@ -7790,6 +7649,16 @@ components:
           type: string
           maxLength: 50
           description: Identifiant émetteur (si différent de l’identifiant affiché)
+    TicketModificationAuthorCode:
+      type: string
+      description: The APNF code of the last modification author
+      pattern: ^([0-9A-Z]{6})$
+      example: TERM00
+    TicketModificationDate:
+      type: string
+      description: Last modification date
+      format: date-time
+      example: '2022-01-17T10:12:25Z'
     TicketNextActionRequiredBy:
       type: string
       description: next action is required by this provider (APNF code)
@@ -7829,6 +7698,8 @@ components:
           $ref: '#/components/schemas/TicketTerminationProviderMessage'
         termination_provider:
           $ref: '#/components/schemas/TicketTerminationProvider'
+        author_ticket_internal_id:
+          $ref: '#/components/schemas/TicketAuthorInternalId'
       type: object
     TicketProviderAuthorApnfCode:
       type: string
@@ -7863,7 +7734,7 @@ components:
       properties:
         communication_type:
           $ref: '#/components/schemas/TicketCommunicationType'
-        creationDate:
+        creation_date:
           $ref: '#/components/schemas/TicketCreationDate'
         ID:
           $ref: '#/components/schemas/UUID'
@@ -7885,9 +7756,29 @@ components:
           $ref: '#/components/schemas/TicketTypologyCode'
         typology_criticality:
           $ref: '#/components/schemas/TicketCriticality'
+        signatory:
+          $ref: '#/components/schemas/TicketSignatory'
+        emitter:
+          $ref: '#/components/schemas/TicketEmitter'
+        termination_voice:
+          $ref: '#/components/schemas/TicketTerminationProvider'
+        opts:
+          $ref: '#/components/schemas/TicketOpts'
+        optv:
+          $ref: '#/components/schemas/TicketOptv'
+        ingress:
+          $ref: '#/components/schemas/TicketIngressProvider'
+        termination_message:
+          $ref: '#/components/schemas/TicketTerminationProviderMessage'
+        author_ticket_internal_id:
+          $ref: '#/components/schemas/TicketAuthorInternalId'
+        modification_author_apnf_code:
+          $ref: '#/components/schemas/TicketModificationAuthorCode'
+        modification_date:
+          $ref: '#/components/schemas/TicketModificationDate'
       required:
         - communication_type
-        - creationDate
+        - creation_date
         - ID
         - issue_type
         - next_action_required_by
@@ -8423,7 +8314,7 @@ components:
           type: string
           maxLength: 32
           description: Mobile phone number
-          example: 102030405
+          example: '0102030405'
         language:
           allOf:
             - description: Language to be used in the UI for this user.
@@ -8529,7 +8420,7 @@ components:
           type: string
           maxLength: 20
           description: Mobile phone number
-          example: 102030405
+          example: '0102030405'
         language:
           allOf:
             - description: |
