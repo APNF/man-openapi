@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.8.0 - 2026/01/29
+
+- (AUTH) The `realm_access` property defined in the JWT token now depends on the perimeter granted to the API credential
+- (BND) New APIs to support display delegation logic
+- (GCO) (Certificates) New `ErrorCertificateValidation` error response
+- (GCO) (Certificates) Provide guide for search criteria
+- (PTF) (Credentials) New `perimeter` property
+- (PTF) (Credentials) *MANAGER* AND *DELEGATION_MANAGER* users can now create, update and delete credentials
+- (PTF) (Credentials) Provide guide for search criteria
+- (PTF) (Users) `role` property replaced with `roles`
+- (PTF) (Users) New roles *DELEGATION_MANAGER* and *DELEGATION_SUPERVISOR*
+- (PTF) (Users) Provide guide for search criteria
+- (PTF) (Users) Fix `mobile_phone` format in examples
+- (PTF) (Providers) Add new `delegation_notification_list` and `delegation_ticketing_notification_list` properties for delegation notification lists
+- (PTF) (Providers) Add new `delegation_near_expiration_notification_active` and `delegation_ticket_notification_active` properties for delegation notification options
+- (PTF) (Providers) Add new language properties to specify the languages to use in notifications
+- (PTF) (Providers) Provide guide for search criteria
+- (PTF) (Providers) Add `ProviderApnfCode` schema
+- (PTF) (Providers) Fix `technical_number` format in examples
+- (PTF) (Tickets) Provide guide for search criteria
+- (PTF) (Tickets) Replace `ID` property name with expected `id`
+- (PTF) (Tickets) Review `TicketTypologyListView` schema
+- (PTF) (History) Update `History` schema
+- (PTF) (History) Add `REVOKE_INIT` action in `History` schema
+- (PTF) (History) Extend possible values in `HistoryObject` property
+- (PTF) (General) New `errors` property in `ApiPayloadError` schema
+- (PTF) (General) Set `PaginationLimit` min limit to 0
+
 ## 1.7.1 - 2025/06/05
 
 - (BPCO) (Certificates) Update serial_number min size limit to 16 characters

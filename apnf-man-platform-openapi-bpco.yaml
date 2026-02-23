@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - BPCO API Reference
-  version: 1.7.1
+  version: 1.8.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -65,10 +65,16 @@ info:
     # References
 
     Additional API references are also available, covering other MAN platform functionalities:
+    - **MAN Platform API Reference**, covering all private APIs published by the MAN platform, including GCO and BND module APIs.
     - **MAN Platform GCO API Reference**, listing the MAN platform GCO (Gestionnaires des Certificats Opérateurs) module APIs, to manage service provider data in the MAN platform, including STI certificates.
-    - **MAN Platform Authentication API Reference**, providing the APIs to create access tokens require to authenticate against the APIs listed in this document.
+    - **MAN Platform BND API Reference**, listing the MAN platform BND (Base Nationale des Délégations d'affichage) module APIs, to manage display delegations that can be granted to operators for one or more telephone numbers.
+    - **MAN Platform Authentication API Reference**, providing the APIs to create access tokens require to authenticate against the MAN Platform private APIs.
 
     # History
+
+    **1.8.0** - 2026/01/29
+    - (GET /pa/certs) New API to retrieve all currently valid PA certificates.
+    - (GET /bypass_token/{bypass_token}) New API to verify the existence and validity of a bypass token
 
     **1.7.1** - 2025/06/05
     - Update serial_number min size limit to 16 characters
@@ -154,6 +160,7 @@ paths:
               schema:
                 type: string
                 example: |
+
                   -----BEGIN CERTIFICATE-----
                   MIIC/DCCAqOgAwIBAgIUV6uzS8pRAEO95DhGDxOyfmqCwAQwCgYIKoZIzj0EAwIw
                   gYcxLDAqBgNVBAMMI0JQQ08gQ0ExIMOiwoDCkyBTSEFLRU4gSW50ZXJtZWRpYXRl
@@ -534,6 +541,147 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /pa/certs:
+    get:
+      summary: Get Policy Authority intermediate certificates
+      description: |
+        Return in a JSON Web Token (JWT) the list of Policy Authority intermediate certificates that can be used
+        to sign the CRL of intermediate subCA and JWT.
+
+        When the `If-Modified-Since` request header is specified, a **304** response is returned if the intermediate
+        certificate list has not been updated since the date specified in the header. This header can be filled with
+        the value of the `Last-Modified` response header collected from a previous call to this API.
+      tags:
+        - BPCO
+      parameters:
+        - $ref: '#/components/parameters/If-Modified-Since'
+        - $ref: '#/components/parameters/X-Request-Id'
+      responses:
+        '200':
+          description: |
+            A JSON Web Token containing the Policy Authority intermediate certificates in its payload and signed
+            by the Certificate Authority PA certificate following
+            [RFC 7515 (JSON Serialisation)](https://datatracker.ietf.org/doc/html/rfc7515#section-3.2).
+            * `protected` property contains the JWS protected header encoded as Base64:
+              ```
+              base64UrlEncode({
+                "alg" : "ES256",
+                "typ" : "JWT",
+                "x5u" : "https://api.man-bpco.fr/ca/certs/2825D0EC08D575B25F595CA683A80F911590FCC3.cer"
+              })
+              ```
+            * `payload` property contains the JWS payload encoded as Base64:
+              ```
+              base64UrlEncode({
+                "version": 1.0,
+                "sequence": 1,
+                "exp": 1300819380,
+                "certList": [
+                  "-----BEGIN CERTIFICATE-----\nMIIDGDCCAr+gAwIBAgIBEzAKBggqhkjOPQQDAjB4MR4wHAYDVQQDDBVCUENPIFIx\nIC0gU0hBS0VOIFJvb3QxKTAnBgNVBAoMIEJhc2UgZGVzIENlcnRpZmljYXRzIE9w\nw6lyYXRldXJzMR4wHAYDVQQLDBVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxCzAJBgNV\nBAYTAkZSMB4XDTIzMDUxMDA4MjcwM1oXDTI4MDUwOTA4MjcwM1owZjERMA8GA1UE\nAxMIQlBDTyBQQTExKTAnBgNVBAoMIEJhc2UgZGVzIENlcnRpZmljYXRzIE9ww6ly\nYXRldXJzMRkwFwYDVQQLExBQb2xpY3kgQXV0aG9yaXR5MQswCQYDVQQGEwJGUjBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABLJycYpQR+mG4cWIjJSNB9Wlu9gWNrpI\nrczV5yYeU+Xec45ovuDe63LCyj7UyzvgDvgqd80zMfXDF9xvQV0awGijggFKMIIB\nRjAdBgNVHQ4EFgQUrkrpCGJpeUzA5yfOBSzr666hmUwwHwYDVR0jBBgwFoAUWg04\nuqf5XfWElJw7HcVHqaMoSKEwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCAYIw\ngZAGA1UdHwSBiDCBhTCBgqAioCCGHmh0dHBzOi8vYXBpLm1hbi1icGNvLmZyL2Nh\nL2NybKJcpFowWDELMAkGA1UEBhMCRlIxKTAnBgNVBAoMIEJhc2UgZGVzIENlcnRp\nZmljYXRzIE9ww6lyYXRldXJzMR4wHAYDVQQDDBVCUENPIFIxIC0gU0hBS0VOIFJv\nb3QwUwYIKwYBBQUHAQEERzBFMEMGCCsGAQUFBzAChjdodHRwczovL2FwaS5tYW4t\nYnBjby5mci9jYS9jZXJ0cy8wMDhmNTNmZDhkNzc5OTAxYzcuY2VyMAoGCCqGSM49\nBAMCA0cAMEQCIAHOVg6U70fqcmbnU/o1MssMYFTQkC4pHfBSRfOr6g02AiBKGTBl\ns48y4wMauu0bzVjxwDegZdKZh3TDMmEqsSplgw==\n-----END CERTIFICATE-----\n",
+                  "-----BEGIN CERTIFICATE-----\nMIIDGTCCAr+gAwIBAgIBFDAKBggqhkjOPQQDAjB4MR4wHAYDVQQDDBVCUENPIFIx\nIC0gU0hBS0VOIFJvb3QxKTAnBgNVBAoMIEJhc2UgZGVzIENlcnRpZmljYXRzIE9w\nw6lyYXRldXJzMR4wHAYDVQQLDBVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxCzAJBgNV\nBAYTAkZSMB4XDTIzMDUxMDA4MzAxM1oXDTI4MDUwOTA4MzAxM1owZjERMA8GA1UE\nAxMIQlBDTyBQQTIxKTAnBgNVBAoMIEJhc2UgZGVzIENlcnRpZmljYXRzIE9ww6ly\nYXRldXJzMRkwFwYDVQQLExBQb2xpY3kgQXV0aG9yaXR5MQswCQYDVQQGEwJGUjBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNYZFwDICMYDIrzBy6sQ6qLxIC1uyzR7\nmtFa+aoD3qJcpJ6vz3ti1nfM2yBMCUaH8JTn4qOsiKR12JPfETySUYmjggFKMIIB\nRjAdBgNVHQ4EFgQUVzxZItEPNhV1wA65SpgjZ56lF/EwHwYDVR0jBBgwFoAUWg04\nuqf5XfWElJw7HcVHqaMoSKEwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCAYIw\ngZAGA1UdHwSBiDCBhTCBgqAioCCGHmh0dHBzOi8vYXBpLm1hbi1icGNvLmZyL2Nh\nL2NybKJcpFowWDELMAkGA1UEBhMCRlIxKTAnBgNVBAoMIEJhc2UgZGVzIENlcnRp\nZmljYXRzIE9ww6lyYXRldXJzMR4wHAYDVQQDDBVCUENPIFIxIC0gU0hBS0VOIFJv\nb3QwUwYIKwYBBQUHAQEERzBFMEMGCCsGAQUFBzAChjdodHRwczovL2FwaS5tYW4t\nYnBjby5mci9jYS9jZXJ0cy8wMDhmNTNmZDhkNzc5OTAxYzcuY2VyMAoGCCqGSM49\nBAMCA0gAMEUCIEq9cqWClZVFszy0uoC3HWOYDavFFMP5e9+8ct5ls3rdAiEA8P+f\n0a9Q16jRm6NO2x5JV36bOB7OB5AQcywuSUBbjHA=\n-----END CERTIFICATE-----\n"
+                ]
+              })
+              ```
+              In this payload:
+                * `version` is a float starting with `1.0` and incremented by 1 each time the payload format is updated,
+                * `sequence` is an integer incremented each time the certificate list is updated,
+                * `exp` contains the timestamp corresponding to the token expiration date. Expiration for this token is set to one week.
+                * `certList` contains the list of the PA intermediates certificates in PEM format.
+            * `signature` property contains the JWS signature encoded as Base64:
+              ```
+              base64UrlEncode(ECDSASHA256(
+                base64UrlEncode(protected) + '.' + base64UrlEncode(payload)
+              ))
+              ```
+          content:
+            application/jose+json:
+              schema:
+                type: object
+                properties:
+                  protected:
+                    type: string
+                    example: |
+                      eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsIng1dSI6Imh0dHBzOi8vPGRvbWFpbmUtYnBjbz4vY2EvY2VydHMvM\
+                      jgyNUQwRUMwOEQ1NzVCMjVGNTk1Q0E2ODNBODBGOTExNTkwRkNDMy5jZXIifQ
+                  payload:
+                    type: string
+                    example: |
+                      ewogICAgICAgICAgICAgICAgInZlcnNpb24iOiAxLjAsCiAgICAgICAgICAgICAgICAic2VxdWVuY2UiOiAxLAogICAg\
+                      ICAgICAgICAgICAgImV4cCI6IDEzMDA4MTkzODAsCiAgICAgICAgICAgICAgICAiY2VydExpc3QiOiBbCiAgICAgICAg\
+                      ICAgICAgICAgICItLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS1cbk1JSURHRENDQXIrZ0F3SUJBZ0lCRXpBS0JnZ3Fo\
+                      a2pPUFFRREFqQjRNUjR3SEFZRFZRUUREQlZDVUVOUElGSXhcbklDMGdVMGhCUzBWT0lGSnZiM1F4S1RBbkJnTlZCQW9N\
+                      SUVKaGMyVWdaR1Z6SUVObGNuUnBabWxqWVhSeklFOXdcbnc2bHlZWFJsZFhKek1SNHdIQVlEVlFRTERCVkRaWEowYVda\
+                      cFkyRjBaU0JCZFhSb2IzSnBkSGt4Q3pBSkJnTlZcbkJBWVRBa1pTTUI0WERUSXpNRFV4TURBNE1qY3dNMW9YRFRJNE1E\
+                      VXdPVEE0TWpjd00xb3daakVSTUE4R0ExVUVcbkF4TUlRbEJEVHlCUVFURXhLVEFuQmdOVkJBb01JRUpoYzJVZ1pHVnpJ\
+                      RU5sY25ScFptbGpZWFJ6SUU5d3c2bHlcbllYUmxkWEp6TVJrd0Z3WURWUVFMRXhCUWIyeHBZM2tnUVhWMGFHOXlhWFI1\
+                      TVFzd0NRWURWUVFHRXdKR1VqQlpcbk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkxKeWNZcFFSK21HNGNX\
+                      SWpKU05COVdsdTlnV05ycElcbnJjelY1eVllVStYZWM0NW92dURlNjNMQ3lqN1V5enZnRHZncWQ4MHpNZlhERjl4dlFW\
+                      MGF3R2lqZ2dGS01JSUJcblJqQWRCZ05WSFE0RUZnUVVya3JwQ0dKcGVVekE1eWZPQlN6cjY2NmhtVXd3SHdZRFZSMGpC\
+                      Qmd3Rm9BVVdnMDRcbnVxZjVYZldFbEp3N0hjVkhxYU1vU0tFd0RBWURWUjBUQVFIL0JBSXdBREFPQmdOVkhROEJBZjhF\
+                      QkFNQ0FZSXdcbmdaQUdBMVVkSHdTQmlEQ0JoVENCZ3FBaW9DQ0dIbWgwZEhCek9pOHZZWEJwTG0xaGJpMWljR052TG1a\
+                      eUwyTmhcbkwyTnliS0pjcEZvd1dERUxNQWtHQTFVRUJoTUNSbEl4S1RBbkJnTlZCQW9NSUVKaGMyVWdaR1Z6SUVObGNu\
+                      UnBcblptbGpZWFJ6SUU5d3c2bHlZWFJsZFhKek1SNHdIQVlEVlFRRERCVkNVRU5QSUZJeElDMGdVMGhCUzBWT0lGSnZc\
+                      bmIzUXdVd1lJS3dZQkJRVUhBUUVFUnpCRk1FTUdDQ3NHQVFVRkJ6QUNoamRvZEhSd2N6b3ZMMkZ3YVM1dFlXNHRcbllu\
+                      QmpieTVtY2k5allTOWpaWEowY3k4d01EaG1OVE5tWkRoa056YzVPVEF4WXpjdVkyVnlNQW9HQ0NxR1NNNDlcbkJBTUNB\
+                      MGNBTUVRQ0lBSE9WZzZVNzBmcWNtYm5VL28xTXNzTVlGVFFrQzRwSGZCU1JmT3I2ZzAyQWlCS0dUQmxcbnM0OHk0d01h\
+                      dXUwYnpWanh3RGVnWmRLWmgzVERNbUVxc1NwbGd3PT1cbi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS1cbiIsCiAgICAg\
+                      ICAgICAgICAgICAgICItLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS1cbk1JSURHVENDQXIrZ0F3SUJBZ0lCRkRBS0Jn\
+                      Z3Foa2pPUFFRREFqQjRNUjR3SEFZRFZRUUREQlZDVUVOUElGSXhcbklDMGdVMGhCUzBWT0lGSnZiM1F4S1RBbkJnTlZC\
+                      QW9NSUVKaGMyVWdaR1Z6SUVObGNuUnBabWxqWVhSeklFOXdcbnc2bHlZWFJsZFhKek1SNHdIQVlEVlFRTERCVkRaWEow\
+                      YVdacFkyRjBaU0JCZFhSb2IzSnBkSGt4Q3pBSkJnTlZcbkJBWVRBa1pTTUI0WERUSXpNRFV4TURBNE16QXhNMW9YRFRJ\
+                      NE1EVXdPVEE0TXpBeE0xb3daakVSTUE4R0ExVUVcbkF4TUlRbEJEVHlCUVFUSXhLVEFuQmdOVkJBb01JRUpoYzJVZ1pH\
+                      VnpJRU5sY25ScFptbGpZWFJ6SUU5d3c2bHlcbllYUmxkWEp6TVJrd0Z3WURWUVFMRXhCUWIyeHBZM2tnUVhWMGFHOXlh\
+                      WFI1TVFzd0NRWURWUVFHRXdKR1VqQlpcbk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQk5ZWkZ3RElDTVlE\
+                      SXJ6Qnk2c1E2cUx4SUMxdXl6Ujdcbm10RmErYW9EM3FKY3BKNnZ6M3RpMW5mTTJ5Qk1DVWFIOEpUbjRxT3NpS1IxMkpQ\
+                      ZkVUeVNVWW1qZ2dGS01JSUJcblJqQWRCZ05WSFE0RUZnUVVWenhaSXRFUE5oVjF3QTY1U3Bnalo1NmxGL0V3SHdZRFZS\
+                      MGpCQmd3Rm9BVVdnMDRcbnVxZjVYZldFbEp3N0hjVkhxYU1vU0tFd0RBWURWUjBUQVFIL0JBSXdBREFPQmdOVkhROEJB\
+                      ZjhFQkFNQ0FZSXdcbmdaQUdBMVVkSHdTQmlEQ0JoVENCZ3FBaW9DQ0dIbWgwZEhCek9pOHZZWEJwTG0xaGJpMWljR052\
+                      TG1aeUwyTmhcbkwyTnliS0pjcEZvd1dERUxNQWtHQTFVRUJoTUNSbEl4S1RBbkJnTlZCQW9NSUVKaGMyVWdaR1Z6SUVO\
+                      bGNuUnBcblptbGpZWFJ6SUU5d3c2bHlZWFJsZFhKek1SNHdIQVlEVlFRRERCVkNVRU5QSUZJeElDMGdVMGhCUzBWT0lG\
+                      SnZcbmIzUXdVd1lJS3dZQkJRVUhBUUVFUnpCRk1FTUdDQ3NHQVFVRkJ6QUNoamRvZEhSd2N6b3ZMMkZ3YVM1dFlXNHRc\
+                      blluQmpieTVtY2k5allTOWpaWEowY3k4d01EaG1OVE5tWkRoa056YzVPVEF4WXpjdVkyVnlNQW9HQ0NxR1NNNDlcbkJB\
+                      TUNBMGdBTUVVQ0lFcTljcVdDbFpWRnN6eTB1b0MzSFdPWURhdkZGTVA1ZTkrOGN0NWxzM3JkQWlFQThQK2ZcbjBhOVEx\
+                      NmpSbTZOTzJ4NUpWMzZiT0I3T0I1QVFjeXd1U1VCYmpIQT1cbi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS1cbiIKICAg\
+                      ICAgICAgICAgICAgIF0KICAgICAgICAgICAgICB9Cg
+                  signature:
+                    type: string
+                    example: nXGIkIbqKKeH5rzoECy6TnQKf6_yBKMb4B4OAT3TqNsyup5HVK8330dh3r42GwHkRb48IsrhsdUdys1goueaKQ
+          headers:
+            Last-Modified:
+              description: |
+                Last update date of the Policy Authority intermediate certificates list. Uses HTTP-Date format (RFC 7231).
+              schema:
+                $ref: '#/components/schemas/RFC7231.HTTP-date'
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            X-Correlation-Id:
+              $ref: '#/components/headers/X-Correlation-Id'
+            X-Response-Id:
+              $ref: '#/components/headers/X-Response-Id'
+        '304':
+          description: No change since the date provided in the `If-Modified-Since` request header
+          headers:
+            Last-Modified:
+              description: |
+                Last update date of the Policy Authority intermediate certificates list. Uses HTTP-Date format (RFC 7231).
+              schema:
+                $ref: '#/components/schemas/RFC7231.HTTP-date'
+            Content-Type:
+              $ref: '#/components/headers/Content-Type-Jose-Json'
+            X-Correlation-Id:
+              $ref: '#/components/headers/X-Correlation-Id'
+            X-Response-Id:
+              $ref: '#/components/headers/X-Response-Id'
+        '405':
+          $ref: '#/components/responses/ErrorNotAllowed'
+        '406':
+          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
+        '429':
+          $ref: '#/components/responses/ErrorRateLimiting'
+        '500':
+          $ref: '#/components/responses/ErrorInternal'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /ca/certs/{sn}.cer:
     get:
       summary: Get Certificate Authority certificate
@@ -552,6 +700,7 @@ paths:
               schema:
                 type: string
                 example: |
+
                   -----BEGIN CERTIFICATE-----
                   MIIDITCCAsigAwIBAgIUKCXQ7AjVdbJfWVymg6gPkRWQ/MMwCgYIKoZIzj0EAwIw
                   eTEeMBwGA1UEAwwVQlBDTyBSMSAtIFNIQUtFTiBSb290MQswCQYDVQQGEwJGUjEq
@@ -682,8 +831,35 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /bypass_token/{bypass_token}:
+    get:
+      summary: Check if bypass_token is valid
+      description: |
+        Check if the given bypass_token is valid or not
+        Must be cached using cache-control info to avoid abuse
+        Always returns an empty body, the response code gives the wanted information
+      parameters:
+        - $ref: '#/components/parameters/BypassToken'
+      tags:
+        - BPCO
+      responses:
+        '204':
+          description: The bypass token is valid
+          headers:
+            cache-control:
+              $ref: '#/components/headers/Cache-Control'
+        '404':
+          description: The bypass token doesn't exist or is expired
+          headers:
+            cache-control:
+              $ref: '#/components/headers/Cache-Control'
 components:
   headers:
+    Cache-Control:
+      description: Cache control info
+      schema:
+        type: string
+        example: public, max-age=3600, must-revalidate
     Content-Length:
       description: Size in bytes of the response body.
       schema:
@@ -715,14 +891,24 @@ components:
     X-Correlation-Id:
       description: ID generated by the API gateway.
       schema:
-        $ref: '#/components/schemas/UUID'
-        example: f13371a6-40d7-48cf-a221-794b63fddbd9
+        allOf:
+          - $ref: '#/components/schemas/UUID'
+          - example: f13371a6-40d7-48cf-a221-794b63fddbd9
     X-Response-Id:
       description: Response ID that corresponds to the `X-Request-Id` request header, if provided.
       schema:
-        $ref: '#/components/schemas/UUID'
-        example: 68831c50-2953-4047-9935-81a98ac1e1e1
+        allOf:
+          - $ref: '#/components/schemas/UUID'
+          - example: 68831c50-2953-4047-9935-81a98ac1e1e1
   parameters:
+    BypassToken:
+      name: bypass_token
+      in: path
+      description: Bypass token
+      required: true
+      schema:
+        type: string
+        example: TEST01-ABCDEF-123A1ZYX9
     CertificateSerialNumber:
       name: sn
       in: path
@@ -745,8 +931,9 @@ components:
       description: Request ID that will be returned into the `X-Response-Id` response header.
       required: false
       schema:
-        $ref: '#/components/schemas/UUID'
-        example: 68831c50-2953-4047-9935-81a98ac1e1e1
+        allOf:
+          - $ref: '#/components/schemas/UUID'
+          - example: 68831c50-2953-4047-9935-81a98ac1e1e1
   responses:
     ErrorInternal:
       description: Returned when an unexpected error occurred while processing the request.
