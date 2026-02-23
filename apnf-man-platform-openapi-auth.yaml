@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - API Authentication Reference
-  version: 1.7.1
+  version: 1.8.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -40,10 +40,16 @@ info:
     # References
 
     Additional API references are also available, covering other MAN platform functionalities:
+    - **MAN Platform API Reference**, covering all private APIs published by the MAN platform, including GCO and BND module APIs.
     - **MAN Platform GCO API Reference**, listing the MAN platform GCO (Gestionnaires des Certificats Opérateurs) module APIs, to manage service provider data in the MAN platform, including STI certificates.
+    - **MAN Platform BND API Reference**, listing the MAN platform BND (Base Nationale des Délégations d'affichage) module APIs, to manage display delegations that can be granted to operators for one or more telephone numbers.
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+
+    **1.8.0** - 2026/01/29
+    - The `realm_access` property defined in the JWT token now depends on the perimeter granted to the API credential
+
     **1.7.0** - 2024/09/09
     - Reorder alphabetically components
 
@@ -102,7 +108,7 @@ paths:
         - `sub`: Token subject, formatted as a UUID corresponding to the identifier of the API credential associated to the `client_id` property used to create the `client_assertion` property passed in the request.
         - `typ`: Always defined as *Bearer*.
         - `azp`: Corresponds to the `client_id` property used to create the `client_assertion` property passed in the request.
-        - `realm_access`: Roles granted to the token. Always defined as `{ "roles": [ "MANAGER" ] }`.
+        - `realm_access`: Roles granted to the token. Depends on the roles granted to the API credential
         - `scope`: Always empty.
         - `groups_uuid`: Contains the identifier of the service provider for which the token has been created, using the format `{ "/providers/<SPC CODE>": "<SPC UUID>" }`, where `<SPC CODE>` is the provider APNF code and `<SPC UUID>` the ID of the provider formatteted as a UUID.
         - `clientHost`: Hostname or IP address of the client that submitted the request.

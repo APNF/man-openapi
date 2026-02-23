@@ -44,8 +44,17 @@ More information is available in the OpenAPI file itself.
 ## BPCO API
 > [apnf-man-platform-openapi-bpco.yaml](apnf-man-platform-openapi-bpco.yaml) / (View in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/apnf/man-openapi/main/apnf-man-platform-openapi-bpco.yaml))
 
-This API reference enumerate the public APIs to used by service provider STI-VS components to retrieve and validate STI certificates.
+This API reference enumerates the public APIs to used by service provider STI-VS components to retrieve and validate STI certificates.
 
+
+## BND API
+> [apnf-man-platform-openapi-bnd.yaml](apnf-man-platform-openapi-bnd.yaml) / (View in [Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/apnf/man-openapi/main/apnf-man-platform-openapi-bnd.yaml))
+
+This API reference explains how to manage display delegations and associated functionalities.
+
+This API is a subset of the [MAN Platform API](apnf-man-platform-openapi.yaml)
+
+More information is available in the OpenAPI file itself.
 
 # Licensing
 
