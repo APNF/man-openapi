@@ -59,7 +59,7 @@ More information is available in the OpenAPI file itself.
 
 # Certificate Policies
 
-The Certificate Policies (CP) document for the MAN platform PKI is maintained in the dedicated [apnf-man-platform-openapi-bnd.yaml](https://github.com/APNF/man-certificate-policies) GitHub repository. You can find there the latest published version and all historical revisions.
+The Certificate Policies (CP) document for the MAN platform PKI is maintained in the dedicated [man-certificate-policies](https://github.com/APNF/man-certificate-policies) GitHub repository. You can find there the latest published version and all historical revisions.
 
 
 # Licensing
