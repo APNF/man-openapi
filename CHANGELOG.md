@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.9.0 - 2026/06/17
+
+- (AUTH) Fix spelling mistake in `groups_uuid` parameter description
+- (BND) GET /delegation - Give `delegation_request_id` search criteria access to providers
+- (BND) PATCH /delegation - Add missing `delegatee_id` property in response
+- (BND) POST /delegation/revoke - Mark `revocation_requested_at` response property as required
+- (BND) GET /delegation/verify/{spc}/{tn} - Add `Cache-Control` response header
+- (BND) GET /delegation/verify/{spc}/{tn} - Update 404 & 400 errors response format
+- (BND) PATCH /delegatee/{delegatee_id} - New API to allow update of delegatees
+- (BND) POST /delegatee/{delegatee_id}/revoke - Add `revoked_at`, `revoked_by` and `revocation_origin` as optional response fields
+- (BND) `Delegatee` schema - Add `updated_at` and `updated_by` properties
+- (BND) Fix spelling mistake in TSP/OSP local copy API description
+- (GCO) Mark `renewal_auto` parameter as deprecated. Automatic renewal is now always enabled for non-test certificates.
+
 ## 1.8.0 - 2026/01/29
 
 - (AUTH) The `realm_access` property defined in the JWT token now depends on the perimeter granted to the API credential
@@ -42,10 +56,8 @@
 - (PTF) (Providers) GET /providers/referential - give access to supervisor users
 - (PTF) (Providers) GET /providers/referential - add technical number in CSV response
 - (PTF) (Providers) GET /ticket - add `modification_date` property as allowed sort criteria
-- (PTF) (Tickets) New GET /ticket/export API to export tickets
 - (PTF) (Tickets) `author_ticket_internal_id` is now updatable
 - (PTF) (Tickets) new properties available in data model
-- (PTF) (Description) Spelling errors
 
 ## 1.7.0 - 2024/09/09
 

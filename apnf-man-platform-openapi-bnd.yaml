@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - BND API Reference
-  version: 1.8.0
+  version: 1.9.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -113,6 +113,17 @@ info:
 
     # History
 
+    **1.9.0** - 2026/06/17
+    - GET /delegation - Give `delegation_request_id` search criteria access to providers
+    - PATCH /delegation - Add missing `delegatee_id` property in response
+    - POST /delegation/revoke - Mark `revocation_requested_at` response property as required
+    - GET /delegation/verify/{spc}/{tn} - Add `Cache-Control` response header
+    - GET /delegation/verify/{spc}/{tn} - Update 404 & 400 errors response format
+    - PATCH /delegatee/{delegatee_id} - New API to allow update of delegatees
+    - POST /delegatee/{delegatee_id}/revoke - Add `revoked_at`, `revoked_by` and `revocation_origin` as optional response fields
+    - `Delegatee` schema - Add `updated_at` and `updated_by` properties
+    - Fix spelling mistake in TSP/OSP local copy API description
+
     **1.8.0** - 2026/01/29
     - Initial version
 servers:
@@ -147,7 +158,7 @@ paths:
 
         **Allowed Roles**: *ADMINISTRATOR*, *DELEGATION_MANAGER*
 
-        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role for the DISPLAY_DELEGATION context can create delegatees for their provider.
+        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role can create delegatees for their provider.
       operationId: CreateDelegatee
       tags:
         - Delegatees
@@ -324,6 +335,79 @@ paths:
           $ref: '#/components/responses/ErrorInternal'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+    patch:
+      summary: API for the OSP to update a delegatee.
+      description: |
+        This API shall be called by the OSP associated to the delegatee to be updated.
+
+        *Notes*:
+        - Only delegatees with a status 'ACTIVE' can be updated.
+
+        **Allowed Roles**: *ADMINISTRATOR*, *DELEGATION_MANAGER*
+
+        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role can update any delegatee created by their service provider and still active.
+      operationId: UpdateDelegatee
+      tags:
+        - Delegatees
+      requestBody:
+        description: |
+          Data to be updated.
+          The request shall contain at least one property to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DelegateeUpdateRequest'
+      responses:
+        '200':
+          description: |
+            Confirms the update of the delegatee and returns its properties in the response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegateeUpdateResponse'
+          headers:
+            Content-Length:
+              $ref: '#/components/headers/Content-Length'
+            X-Correlation-Id:
+              $ref: '#/components/headers/X-Correlation-Id'
+            X-Response-Id:
+              $ref: '#/components/headers/X-Response-Id'
+        '400':
+          $ref: '#/components/responses/ErrorValidation'
+        '401':
+          $ref: '#/components/responses/ErrorNotAuthenticated'
+        '403':
+          $ref: '#/components/responses/ErrorNoPermission'
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+        '406':
+          $ref: '#/components/responses/ErrorInvalidAcceptHeader'
+        '409':
+          description: Error returned when there is already an existing delegatee with the same client_internal_id.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - code
+                properties:
+                  code:
+                    type: string
+                    description: Error code. Shall be capitalized with underscore.
+                    example: CONFLICT
+                  message:
+                    type: string
+                    description: Message providing more details and context for error that occurred
+                    example: Delegatee already exist for '<client_internal_id>'.
+        '415':
+          $ref: '#/components/responses/ErrorInvalidContentType'
+        '429':
+          $ref: '#/components/responses/ErrorRateLimiting'
+        '500':
+          $ref: '#/components/responses/ErrorInternal'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /delegatee/{delegatee_id}/revoke:
     post:
       summary: API for the OSP to revoke a delegatee it owns.
@@ -336,7 +420,7 @@ paths:
 
         **Allowed Roles**: *ADMINISTRATOR*, *DELEGATION_MANAGER*
 
-        - Only *ADMINISTRATOR* and users with a *DELEGATION_MANAGER* role for the DISPLAY_DELEGATION context can revoke delegatees created by their service provider.
+        - Only *ADMINISTRATOR* and users with a *DELEGATION_MANAGER* role can revoke delegatees created by their service provider.
       operationId: RevokeDelegatee
       tags:
         - Delegatees
@@ -543,7 +627,7 @@ paths:
 
         **Allowed Roles**: *ADMINISTRATOR*, *DELEGATION_MANAGER*
 
-        - Only *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role for the DISPLAY_DELEGATION context can create display delegations for their provider.
+        - Only *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role can create display delegations for their provider.
       operationId: CreateDisplayDelegation
       requestBody:
         description: Creation request details
@@ -694,7 +778,7 @@ paths:
 
         **Allowed Roles**: *ADMINISTRATOR*, *DELEGATION_MANAGER*
 
-        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role for the DISPLAY_DELEGATION context can update any display delegations created by their service provider and still active .
+        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role can update any display delegations created by their service provider and still active .
       operationId: UpdateDisplayDelegations
       tags:
         - Display Delegations
@@ -754,7 +838,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DisplayDelegationUpdateEntry'
+                  $ref: '#/components/schemas/DisplayDelegationUpdateResponse'
               examples:
                 DisplayDelegationUpdateResponse:
                   summary: Display delegation update response for a single number and a ranger of numbers
@@ -810,7 +894,7 @@ paths:
 
         **Allowed Roles**: *ADMINISTRATOR*, *DELEGATION_MANAGER*
 
-        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role for the DISPLAY_DELEGATION context can revoke any display delegations created by their service provider and still active .
+        - *ADMINISTRATOR* and users with *DELEGATION_MANAGER* role can revoke any display delegations created by their service provider and still active .
       operationId: RevokeDisplayDelegations
       tags:
         - Display Delegations
@@ -857,7 +941,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DisplayDelegationRevocationUpdateEntry'
+                  $ref: '#/components/schemas/DisplayDelegationRevocationResponse'
               examples:
                 DisplayDelegationRevocationResponse:
                   summary: Successful revocation request response
@@ -1365,6 +1449,8 @@ paths:
             A display delegation exists for the telephone number and the OSP service provider and is still active.
             Returns no contents.
           headers:
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
             X-Correlation-Id:
               $ref: '#/components/headers/X-Correlation-Id'
             X-Response-Id:
@@ -1378,35 +1464,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiPayloadListError'
+                $ref: '#/components/schemas/ApiPayloadError'
               examples:
-                TnForbiddenDelegationCreationErrorResponse:
-                  summary: Error raised when one of the numbers defined in the `tns` request property is not allowed
+                TnForbiddenErrorResponse:
+                  summary: Error raised when the phone number is not allowed
                   value:
-                    - code: TN_FORBIDDEN
-                      message: At least one number is not authorized for a display delegation. The incorrect telephone numbers are '<TNs>'.
-                      errors: '`tns`: [tn1]'
-                TnFormatInvalidDelegationCreationErrorResponse:
-                  summary: Error raised when one of the numbers defined in the `tns` request property is not allowed
-                  value:
-                    - code: TN_FORMAT_INVALID
-                      message: The format of at least one of the numbers is invalid. The incorrect telephone numbers are '<TNs>'.
-                      errors: '`tns`: [tn1]'
+                    code: TN_FORBIDDEN
+                    message: The number 33612345678 is not authorized for a display delegation
+                    errors: '`tn`: 33612345678'
                 InvalidProviderCodeErrorResponse:
                   summary: Error raised when the ProviderCode is not valid in the request
                   value:
-                    - code: INVALID_PROVIDER_CODE
-                      message: Invalid SPC code '<invalid SPC>'.
-                      errors: <invalid SPC>
+                    code: INVALID_PROVIDER_CODE
+                    message: Invalid SPC code TES01
+                    errors: '`spc`: TES01'
         '404':
-          description: |
-            No active display delegation exists for the telephone number and the OSP service provider.
-            Returns no contents.
-          headers:
-            X-Correlation-Id:
-              $ref: '#/components/headers/X-Correlation-Id'
-            X-Response-Id:
-              $ref: '#/components/headers/X-Response-Id'
+          $ref: '#/components/responses/ErrorNotFound'
         '405':
           $ref: '#/components/responses/ErrorNotAllowed'
         '406':
@@ -2106,6 +2179,11 @@ components:
         provider_author_apnf_code: OPE100
         creation_date: '2022-01-17T10:12:25Z'
   headers:
+    Cache-Control:
+      description: Header used to define cache to be set for the entry.
+      schema:
+        type: string
+        example: public, max-age=86400, must-revalidate
     Content-Length:
       description: Size in bytes of the response body.
       schema:
@@ -2237,7 +2315,7 @@ components:
       name: delegation_request_id
       in: query
       description: |
-        Filter by delegation request ID (APNF/MAN_ADMIN only).
+        Filter by delegation request ID.
 
         **Operators:** `eq`, `ne`, `in`, `not_in`
       required: false
@@ -2842,6 +2920,19 @@ components:
             - a user. The format shall be `<first name> <last name> <<email address>>`.
             - `API` if the action is triggered by an API call
           example: John Doe <john.doe@spa.domain>
+        updated_at:
+          type: string
+          description: Date the delegatee has been last updated.
+          format: date-time
+          example: '2025-02-01T11:00:00Z'
+        updated_by:
+          type: string
+          maxLength: 254
+          description: |
+            Origin of the last update request. May be set to :
+            - a user. The format shall be `<first name> <last name> <<email address>>`.
+            - `API` if the action is triggered by an API call
+          example: John Doe <john.doe@spa.domain>
         revoked_at:
           type: string
           description: Revocation Date
@@ -2928,6 +3019,68 @@ components:
         - ACTIVE
         - REVOKED
       example: ACTIVE
+    DelegateeUpdateRequest:
+      type: object
+      description: |
+        Delegatee update request data model.
+        At least one propery shall be specified.
+      properties:
+        client_internal_id:
+          $ref: '#/components/schemas/DelegateeInternalClientId'
+        description:
+          allOf:
+            - description: |
+                Description for the delegatee. Can be specified empty to remove the description currently assigned to the delegatee.
+            - $ref: '#/components/schemas/DelegateeDescription'
+    DelegateeUpdateResponse:
+      type: object
+      description: Data model of successful delegatee update response.
+      required:
+        - delegatee_id
+        - client_internal_id
+        - status
+        - delegation_cnt
+        - created_at
+        - created_by
+      properties:
+        delegatee_id:
+          $ref: '#/components/schemas/DelegateeId'
+        client_internal_id:
+          $ref: '#/components/schemas/DelegateeInternalClientId'
+        description:
+          $ref: '#/components/schemas/DelegateeDescription'
+        status:
+          $ref: '#/components/schemas/DelegateeStatus'
+        delegation_cnt:
+          type: integer
+          description: Number of active display delegations created with this delegatee
+          example: 0
+        created_at:
+          type: string
+          description: Delegatee creation date
+          format: date-time
+          example: '2022-01-17T10:12:25Z'
+        created_by:
+          type: string
+          maxLength: 254
+          description: |
+            Origin of the create action. May be set to :
+            - a user. The format shall be `<first name> <last name> <<email address>>`.
+            - `API` if the action is triggered by an API call
+          example: John Doe <john.doe@spa.domain>
+        updated_at:
+          type: string
+          description: Date the call has been performed.
+          format: date-time
+          example: '2025-02-01T11:00:00Z'
+        updated_by:
+          type: string
+          maxLength: 254
+          description: |
+            Origin of the update request. May be set to :
+            - a user. The format shall be `<first name> <last name> <<email address>>`.
+            - `API` if the action is triggered by an API call
+          example: John Doe <john.doe@spa.domain>
     DelegationTicket:
       allOf:
         - oneOf:
@@ -3176,7 +3329,6 @@ components:
           maxLength: 64
           description: |
             ID of the display delegation request used to create this record
-            Available only to *MAN_ADMINISTRATOR* and *APNF* users
           example: 743d9d17-85dd-4c2a-af9a-e89a72ce4089
         status:
           $ref: '#/components/schemas/DisplayDelegationStatus'
@@ -3254,18 +3406,18 @@ components:
 
             Not available to the OSP user or OSP API client.
           example: John Doe <john.doe@spa.domain>
-        revoked_at:
-          type: string
-          description: |
-            Display delegation effective revocation date.
-            This corresponds to the date the display delegation status has been switched to `REVOKED`.
-          format: date-time
-          example: '2022-01-17T10:12:25Z'
         revocation_requested_at:
           type: string
           description: |
             Date the revocation has been requested by the OPE.
             Not available to the OSP user or OSP API client.
+          format: date-time
+          example: '2022-01-17T10:12:25Z'
+        revoked_at:
+          type: string
+          description: |
+            Display delegation effective revocation date.
+            This corresponds to the date the display delegation status has been switched to `REVOKED`.
           format: date-time
           example: '2022-01-17T10:12:25Z'
         revocation_origin:
@@ -3379,7 +3531,6 @@ components:
           maxLength: 64
           description: |
             ID of the display delegation request used to create this record
-            Available only to *MAN_ADMINISTRATOR* and *APNF* users
           example: 743d9d17-85dd-4c2a-af9a-e89a72ce4089
         status:
           $ref: '#/components/schemas/DisplayDelegationStatus'
@@ -3425,13 +3576,14 @@ components:
         Optional information provided by the OPE associated to the display delegation.
         This information is not available to the OSP associated to the display delegation.
       example: Lorem ipsum...
-    DisplayDelegationRevocationUpdateEntry:
+    DisplayDelegationRevocationResponse:
       type: object
       description: Data model of display delegation update response.
       required:
         - tn_start
         - tn_end
         - delegatee_id
+        - revocation_requested_at
       properties:
         tn_start:
           allOf:
@@ -3454,6 +3606,38 @@ components:
             Date the revocation request has been received by the platform.
           format: date-time
           example: '2022-01-17T10:12:25Z'
+        revoked_at:
+          type: string
+          description: |
+            Only included if the display delegation is already revoked.
+            Delegation effective revocation date.
+          format: date-time
+          example: '2022-01-17T10:12:25Z'
+        revocation_origin:
+          type: string
+          description: |
+            Only included if the display delegation is already revoked.
+            Origin of the revocation action. May be set to :
+            - `OPE` if the revocation has been triggered by the OPE.
+            - `OSP` if the action has been triggered by the revocation of the associated delegatee from the OSP
+            - `SYSTEM` if the action has been triggered by the platform during cleanup process
+          enum:
+            - OPE
+            - OSP
+            - SYSTEM
+          example: OPE
+        revoked_by:
+          type: string
+          maxLength: 254
+          description: |
+            Only included if the display delegation is already revoked.
+            When the revocation has been triggered by the OPE, provides the autor of the revocation. May be set to:
+            - a user. The format shall be `<first name> <last name> <<email address>>`.
+            - `API` if the action is triggered by an API call
+
+            Available only to OPE user or OPE API client.
+            Available when `revocation_origin` is set to `OPE`.
+          example: John Doe <john.doe@spa.domain>
     DisplayDelegationStatus:
       type: string
       description: Display delegation status
@@ -3462,7 +3646,7 @@ components:
         - EXPIRED
         - REVOKED
       example: ACTIVE
-    DisplayDelegationUpdateEntry:
+    DisplayDelegationUpdateResponse:
       type: object
       description: Data model of display delegation update response.
       required:
@@ -3481,6 +3665,10 @@ components:
                 Telephone number. Provides the last number of the range defined with the number specified as `tn_start` property.
                 The property may be set to the same value than `tn_start`, meaning that this record is for one single telephone number.
             - $ref: '#/components/schemas/Tn'
+        delegatee_id:
+          allOf:
+            - description: ID of the delegatee used for the display delegation creation process.
+            - $ref: '#/components/schemas/DelegateeId'
         expiration_date:
           type: string
           description: |
