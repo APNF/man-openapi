@@ -56,6 +56,12 @@ This API is a subset of the [MAN Platform API](apnf-man-platform-openapi.yaml)
 
 More information is available in the OpenAPI file itself.
 
+
+# Certificate Policies
+
+The Certificate Policies (CP) document for the MAN platform PKI is maintained in the dedicated [man-certificate-policies](https://github.com/APNF/man-certificate-policies) GitHub repository. You can find there the latest published version and all historical revisions.
+
+
 # Licensing
 
 This work is licensed under a [Creative Commons Attribution-ShareAlike 4.0

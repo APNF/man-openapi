@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - GCO API Reference
-  version: 1.8.0
+  version: 1.9.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -115,6 +115,9 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+
+    **1.9.0** - 2026/06/17
+    - Mark `renewal_auto` parameter as deprecated. Automatic renewal is now always enabled for non-test certificates.
 
     **1.8.0** - 2026/01/29
     - (Certificates) New `ErrorCertificateValidation` error response
@@ -769,13 +772,13 @@ paths:
                 renewal_auto:
                   type: boolean
                   description: |
-                    Automated renewal option. Cannot be enabled for test certificates.
+                    **Deprecated** Automated renewal option.
 
-                    If enabled, the application will automatically create a new certificate
-                    using the same CSR and options provided for this certificate.
+                    If provided, shall always be set to:
+                    - `false` for test certificates
+                    - `true` otherwise
 
-                    See `renewal_after` option for defining when the renewal process shall be triggered.
-                  default: false
+                    This parameter will be removed in the future.
                   example: true
                 renewal_after:
                   type: integer
@@ -783,7 +786,7 @@ paths:
                     Number of days to wait after certificate validity start date
                     for the automated certificate renewal process to be triggered.
 
-                    Required if if `renewal_auto` is set to `true`.
+                    Required if `test_certificate` is not set to `true`.
                     Otherwise, shall not be specified.
                   example: 300
             examples:
@@ -1186,22 +1189,14 @@ paths:
                     - Cannot be deleted.
                   format: date-time
                   example: '2023-01-17T10:12:25Z'
-                renewal_auto:
-                  type: boolean
-                  description: |
-                    Change the certificate automatic renewal option.
-                    - Can be changed for both direct and indirect certificates
-                    - Can be changed only by the origin service provider
-                    - Cannot be enabled for test certificates
-                    - Cannot be deleted.
-                  example: true
                 renewal_after:
                   type: integer
                   description: |
                     Change the number of days to wait after certificate validity start date to trigger the automatic renewal process.
-                    - Can be changed for both direct and indirect certificates
-                    - Can be changed only by the origin service provider
-                    - Cannot be deleted if `renewal_auto` is set to `true` for this certificate.
+                    - Cannot be specified for test certificates
+                    - Can be changed otherwise
+
+                    Can be changed only by the origin service provider
                   example: 300
             examples:
               DirectCertificateUpdateRequest:
@@ -1387,9 +1382,13 @@ paths:
                 renewal_auto:
                   type: boolean
                   description: |
-                    Automated renewal option. Cannot be enabled for test certificates.
+                    **Deprecated** Automated renewal option.
 
-                    If not specified, the property will copy the value set for the initial certificate.
+                    If provided, shall always be set to:
+                    - `false` for test certificates
+                    - `true` otherwise
+
+                    This parameter will be removed in the future.
                   example: true
                 renewal_after:
                   type: integer
@@ -1397,8 +1396,11 @@ paths:
                     Number of days after certificate validity start date to wait for
                     the automated certificate renewal process to be triggered.
 
-                    Can be specified only if `renewal_auto` is set to `true`.
-                  example: 300
+                    Can be specified if `test_certificate` is not set to `true`.
+                    Otherwise, shall not be specified.
+
+                    If not specified for a non-test certificate, the value will be copied from the initial certificate.
+                  example: 350
       responses:
         '201':
           description: |
@@ -2469,13 +2471,12 @@ components:
         test_certificate: false
         valid_from: '2022-03-01T00:00:00Z'
         valid_to: 2022-05-3123:59:59Z
-        renewal_auto: false
+        renewal_after: 90
     IndirectCertificateUpdateRequest:
       summary: Request to update all possible properties of a finalized indirect certificate
       value:
         name: Certificate new name.
         description: Updated description of the certificate.
-        renewal_auto: true
         renewal_after: 300
     PendingIndirectCertificate:
       summary: Details of an indirect certificate not yet finalized
@@ -2504,7 +2505,6 @@ components:
         test_certificate: false
         valid_from: '2022-06-01T00:00:00Z'
         valid_to: '2023-01-00T00:00:00Z'
-        renewal_auto: true
         renewal_after: 300
     ProviderDetails:
       value:
