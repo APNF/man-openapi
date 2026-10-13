@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - BND API Reference
-  version: 1.9.0
+  version: 1.10.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -112,6 +112,11 @@ info:
     - **MAN Platform API Reference**, providing the complete set of MAN platform APIs, combining the GCO and BND APIs with all platform management APIs.
 
     # History
+
+    **1.10.0** - 2026/10/12
+    - PATCH /delegatee/{delegatee_id} - Fix `Content-Type` request header value to `application/merge-patch+json`
+    - PATCH /delegation - Fix `Content-Type` request header value to `application/merge-patch+json`
+    - GET /delegation/export - New CSV file format as the file now includes prestations for both OPE and OSP roles
 
     **1.9.0** - 2026/06/17
     - GET /delegation - Give `delegation_request_id` search criteria access to providers
@@ -355,7 +360,7 @@ paths:
           The request shall contain at least one property to update
         required: true
         content:
-          application/json:
+          application/merge-patch+json:
             schema:
               $ref: '#/components/schemas/DelegateeUpdateRequest'
       responses:
@@ -580,7 +585,9 @@ paths:
             example: name:asc
       responses:
         '200':
-          description: Return a paginated list of records
+          description: |
+            Return a paginated list of records.
+            Note that this API does not get the total number of entries for performance reasons, leanding the `metadata` object to provide limited information.
           headers:
             Content-Length:
               $ref: '#/components/headers/Content-Length'
@@ -791,7 +798,7 @@ paths:
             - The `delegatee_id` criteria is optional.
           - The changes to apply on `expiration_date` and/or `ope_information` properties
         content:
-          application/json:
+          application/merge-patch+json:
             schema:
               type: object
               required:
@@ -1016,8 +1023,7 @@ paths:
 
         The results are presented in csv format with headers defined according to the user's scope:
 
-        - **OPE**: `status;tn_start;tn_end;expiration_date;delegatee_id;ope_information;created_at;updated_at;revoked_at`
-        - **OSP**: `status;tn_start;tn_end;expiration_date;delegatee_id;osp_client_internal_id;created_at;revoked_at`
+        - *ADMINISTRATOR*, *DELEGATION_MANAGER*, *DELEGATION_SUPERVISOR*: `ope;osp;tn_start;tn_end;delegatee_id;status;expiration_date;delegation_request_id;ope_information;osp_client_internal_id;created_at;updated_at;revoked_at`
       operationId: ExportDisplayDelegations
       tags:
         - Display Delegations
@@ -3023,7 +3029,7 @@ components:
       type: object
       description: |
         Delegatee update request data model.
-        At least one propery shall be specified.
+        At least one property shall be specified.
       properties:
         client_internal_id:
           $ref: '#/components/schemas/DelegateeInternalClientId'
@@ -3692,7 +3698,6 @@ components:
         - date
         - subject
         - action
-        - message
         - object
       properties:
         id:
@@ -3796,26 +3801,25 @@ components:
     PaginationMetaData:
       type: object
       description: Information regarding paginated results
+      required:
+        - offset
+        - limit
+        - links
       properties:
         offset:
           type: integer
-          description: Current offset
+          description: Current offset requested
           default: 0
           example: 40
         limit:
           type: integer
-          description: Number of resources per page
+          description: Number of resources returned per page
           minimum: 1
           default: 20
           maximum: 100
         links:
           type: object
           properties:
-            next:
-              type: string
-              description: Path to retrieve the next page
-              pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
-              example: /resource?offset=60&limit=20
             first:
               type: string
               description: Path to retrieve the first page
@@ -3823,9 +3827,37 @@ components:
               example: /resource?offset=0&limit=20
             prev:
               type: string
-              description: Path to retrieve the previous page
+              description: |
+                Path to retrieve the previous page.
+                This property is available if the request performed used an offset greater than 0.
               pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
               example: /resource?offset=20&limit=20
+            next:
+              type: string
+              description: |
+                Path to retrieve the next page.
+                This property may not be available if the corresponding does not provide the total number of entries in the parent object, or if the API returned the last entry page.
+              pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
+              example: /resource?offset=60&limit=20
+            last:
+              type: string
+              description: |
+                Path to retrieve the last page of entries corresponding to the provided filters.
+                This property may not be available if the corresponding does not provide the total number of entries in the parent object.
+              pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
+              example: /resource?offset=0&limit=20
+            nb_pages:
+              type: integer
+              description: Number of pages
+              minimum: 0
+              example: 2
+        total:
+          type: integer
+          description: |
+            Total number of entries corresponding to the provided filters.
+            This property may not be available if the corresponding API does not provide internal count facilities for performance reasons.
+          minimum: 0
+          example: 42
     ProviderApnfCode:
       type: string
       description: APNF code of the provider affected
