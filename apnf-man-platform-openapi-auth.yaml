@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - API Authentication Reference
-  version: 1.9.0
+  version: 1.10.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -47,6 +47,8 @@ info:
 
     # History
 
+    **1.10.0** - 2026/10/12 - N/A
+
     **1.9.0** - 2026/06/17
     - Fix spelling mistake in `groups_uuid` parameter description
 
@@ -56,7 +58,7 @@ info:
     **1.7.0** - 2024/09/09
     - Reorder alphabetically components
 
-    **1.6.0** - N/A
+    **1.6.0** - 2023/12/13 - N/A
 
     **1.5.0** - 2023/09/27
     - Clarify access token lifetime
@@ -194,8 +196,8 @@ paths:
                     ```
                     HMACSHA256(
                       BASE64URL(UTF8(JWS Protected Header)) || '.' ||
-                      BASE64URL(JWS Payload) ,
-                      (Symmetric Key)
+                      BASE64URL(JWS Payload),
+                      Symmetric Key
                     )
                     ```
                     where

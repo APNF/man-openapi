@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.10.0 - 2026/10/12
+
+- (BND) PATCH /delegatee/{delegatee_id} - Fix `Content-Type` request header value to `application/merge-patch+json`
+- (BND) PATCH /delegation - Fix `Content-Type` request header value to `application/merge-patch+json`
+- (BND) GET /delegation/export - New CSV file format as the file now includes prestations for both OPE and OSP roles
+- (PTF) `History` schema - Remove `message` property from required elements
+- (PTF) `PaginationMetaData` schema - Update descriptions to mention cases when properties are not expected
+
 ## 1.9.0 - 2026/06/17
 
 - (AUTH) Fix spelling mistake in `groups_uuid` parameter description

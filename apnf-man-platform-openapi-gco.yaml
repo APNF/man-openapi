@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: APNF MAN Platform - GCO API Reference
-  version: 1.9.0
+  version: 1.10.0
   license:
     name: CC-BY-SA-4.0
     url: https://creativecommons.org/licenses/by-sa/4.0/legalcode
@@ -115,6 +115,8 @@ info:
     - **MAN Platform BPCO API Reference**, listing APIs published as part of the BPCO (Base Publique des Certificats Opérateurs), the MAN platform public access service used to access STI certificates.
 
     # History
+
+    **1.10.0** - 2026/10/12 - N/A
 
     **1.9.0** - 2026/06/17
     - Mark `renewal_auto` parameter as deprecated. Automatic renewal is now always enabled for non-test certificates.
@@ -3530,7 +3532,6 @@ components:
         - date
         - subject
         - action
-        - message
         - object
       properties:
         id:
@@ -3655,26 +3656,25 @@ components:
     PaginationMetaData:
       type: object
       description: Information regarding paginated results
+      required:
+        - offset
+        - limit
+        - links
       properties:
         offset:
           type: integer
-          description: Current offset
+          description: Current offset requested
           default: 0
           example: 40
         limit:
           type: integer
-          description: Number of resources per page
+          description: Number of resources returned per page
           minimum: 1
           default: 20
           maximum: 100
         links:
           type: object
           properties:
-            next:
-              type: string
-              description: Path to retrieve the next page
-              pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
-              example: /resource?offset=60&limit=20
             first:
               type: string
               description: Path to retrieve the first page
@@ -3682,9 +3682,37 @@ components:
               example: /resource?offset=0&limit=20
             prev:
               type: string
-              description: Path to retrieve the previous page
+              description: |
+                Path to retrieve the previous page.
+                This property is available if the request performed used an offset greater than 0.
               pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
               example: /resource?offset=20&limit=20
+            next:
+              type: string
+              description: |
+                Path to retrieve the next page.
+                This property may not be available if the corresponding does not provide the total number of entries in the parent object, or if the API returned the last entry page.
+              pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
+              example: /resource?offset=60&limit=20
+            last:
+              type: string
+              description: |
+                Path to retrieve the last page of entries corresponding to the provided filters.
+                This property may not be available if the corresponding does not provide the total number of entries in the parent object.
+              pattern: ^(\/([\w-.~]|%[0-9A-Za-z]{2})*)*(\?([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?((&|;)([\w-.~]|%[0-9A-Za-z]{2})+(=([\w-.~]|%[0-9A-Za-z]{2})+)?)*)?(#([\w-.~]|%[0-9A-Za-z]{2})+)?$
+              example: /resource?offset=0&limit=20
+            nb_pages:
+              type: integer
+              description: Number of pages
+              minimum: 0
+              example: 2
+        total:
+          type: integer
+          description: |
+            Total number of entries corresponding to the provided filters.
+            This property may not be available if the corresponding API does not provide internal count facilities for performance reasons.
+          minimum: 0
+          example: 42
     PendingIndirectCertificate:
       type: object
       description: |

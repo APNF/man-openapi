@@ -6,10 +6,11 @@ Welcome to the APNF MAN platform API reference.
 
 The OpenAPI files present in this repository provide to API clients the necessary information to access the APIs made available by the MAN platform, the STIR/Shaken french solution for service providers, and operated by the APNF (ASSOCIATION DES PLATEFORMES DE NORMALISATION DES FLUX INTER-OPERATEURS).
 
-The APIs are split into 3 main categories:
+The APIs are split into 4 main categories:
 - Authentication API
 - GCO (Gestionnaire des Certificats Opérateurs) API
 - BPCO (Base Publique des Certificats Opérateurs) API
+- BND (Base des Numéros Délégués) API
 
 If you are a service provider operating in France, you need to be registered as an APNF member in order to get access to the MAN platform and be able to get STI certificates.
 If you are not yet a member, please contact the APNF.
